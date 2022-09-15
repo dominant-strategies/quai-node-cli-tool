@@ -1,15 +1,17 @@
 # quai-node-cli-tool
 
-A simple, CLI interface for installing, building, and running Quai Network nodes and managers.
+A simple, CLI interface for installing, building, and running your Quai Network node and manager.
 
 ## Getting Started
 
 ###  Dependencies
 
-* [Node and manager installation dependencies](https://docs.quai.network/develop/installation)
+* Quai Network node and manager [installation dependencies](https://docs.quai.network/develop/installation)
+    * [GoLang](https://golang.org/doc/install)
+    * [git](https://github.com/git-guides/install-git)
 * MacOS or Linux
-* Homebrew
-* charmbracelet/gum (optional - will be installed if not present)
+* [Homebrew](https://brew.sh/)
+* [charmbracelet/gum](https://github.com/charmbracelet/gum) (optional - will be installed if not present)
 
 ### Installation
 
@@ -26,6 +28,7 @@ sh node-miner-manager.sh
 ```
 
 A window will pop up that looks like this:
+
 ![Screenshot](/screenshots/Interface.png)
 
 ## Usage
