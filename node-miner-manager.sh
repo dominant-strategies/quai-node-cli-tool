@@ -2,9 +2,12 @@
 
 which -s brew
 if [[ $? != 0 ]] ; then
-    # Install Homebrew
-    echo "Installing Homebrew..."
-    ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    read -p "Homebrew not found. Would you like to install it? (y/n) " yn
+    case $yn in
+        [Yy]* ) echo "Installing Homebrew..."; ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)";;
+        [Nn]* ) echo "Homebrew not installed. Please install Homebrew before continuing."; exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
 else
     echo "Homebrew found. Checking for gum installation..."
 fi
@@ -36,13 +39,13 @@ while true; do
 
     if $ISRUNNING; then
         STARTFULLNODE="Full Node - $(gum style --foreground="#5aab61" 'Running ✔') "
-        STARTMININGNODE="Full Node - $(gum style --foreground="#5aab61" 'Running ✔') "
+        STARTMININGNODE="Manager - $(gum style --foreground="#FF0000" 'Stopped x') "
     elif $ISMINING; then
-        STARTFULLNODE="Mining Node - $(gum style --foreground="#5aab61" 'Running ✔') "
-        STARTMININGNODE="Mining Node & Manager - $(gum style --foreground="#5aab61" 'Running ✔') "
+        STARTFULLNODE="Full Node - $(gum style --foreground="#5aab61" 'Running ✔') "
+        STARTMININGNODE="Manager - $(gum style --foreground="#5aab61" 'Running ✔') "
     else
         STARTFULLNODE="Start Full Node"
-        STARTMININGNODE="Start Mining Node and Manager"
+        STARTMININGNODE="Start Full Node and Manager"
     fi
 
     gum style --border double --margin "0 0" --padding "1 2" --border-foreground="#ec4d37" "Hello, there! Welcome to your $(gum style --foreground "#ec4d37" 'Quai Node Manager')."
@@ -50,26 +53,47 @@ while true; do
     CHOICE=$(gum choose --cursor="~"  "$INSTALLED" "Update" "$STARTFULLNODE" "$STARTMININGNODE" "Stop" "Check Node logs" "Check Miner Logs" "Quit")
 
     case $CHOICE in
+        # Case 1: User selects Install option after they have already installed the node and manager
         "$(gum style --foreground="#5aab61" 'Installed ✔') ")
             echo "\nYou've already installed your node and manager.\nSelect $(gum style --foreground "#ec4d37" 'update') to update your node and manager."
             sleep 3
             clear
         ;;
+        # Case 2: User selects Full Node - Running ✔ option after their full node is already running
         "Full Node - $(gum style --foreground="#5aab61" 'Running ✔') ")
             echo "\nYour full node is already running.\nSelect $(gum style --foreground "#ec4d37" 'stop') to stop your node."
             sleep 3
             clear
         ;;
-        "Mining Node - $(gum style --foreground="#5aab61" 'Running ✔') ")
-            echo "\nYour mining node is already running.\nSelect $(gum style --foreground "#ec4d37" 'stop') to stop your node."
-            sleep 3
-            clear
+        # Case 3: User selects Manager - Stoped x when their node is running but their manager is not
+        "Manager - $(gum style --foreground="#FF0000" 'Stopped x') ")
+            region=$(gum input --placeholder "What region would you like to mine? (1, 2, 3) ")
+            zone=$(gum input --placeholder "What zone would you like to mine? (1, 2, 3) ")
+            cd $HOME/quainetwork/quai-manager
+            gum spin --spinner="line" --title="initializing manager" --spinner.foreground "#ec4d37" make run-mine-background region=$region zone=$zone
+            echo "------> $(gum style --foreground "#ec4d37" 'manager ')started."
+            tail -25 $HOME/quainetwork/quai-manager/logs/quai-manager.log
+            echo "\nDo you want to exit the script?\n"
+            EXIT_CHOICE="$(gum choose  "Yes" "No")"
+            case $EXIT_CHOICE in
+                "Yes" ) 
+                        cd $HOME/quainetwork/quai-manager
+                        gum spin --spinner="line" --title="stopping manager" --spinner.foreground "#ec4d37" make stop
+                        echo "------> $(gum style --foreground "#ec4d37" 'manager ')stopped.\n"
+                        cd $HOME/quainetwork/go-quai
+                        gum spin --spinner="line" --title="stopping full node " --spinner.foreground "#ec4d37" make stop
+                        echo "------> $(gum style --foreground "#ec4d37" 'full node ')stopped.\n"
+                        gum spin --spinner="line" --title="Exiting session" --spinner.foreground "#ec4d37" sleep 2
+                        clear
+                        exit 0
+                ;;
+                "No" ) clear
+                ;;
+            esac
+            ISRUNNING="false"
+            ISMINING="true"
         ;;
-        "Mining Node & Manager - $(gum style --foreground="#5aab61" 'Running ✔') ")
-            echo "\nYour mining node and manager are already running.\nSelect $(gum style --foreground "#ec4d37" 'stop') to stop your node."
-            sleep 3
-            clear
-        ;;
+        # Case 4: User selects the Install option when they have not installed the node and manager
         "Install")
 
             menu='./quai.sh'
@@ -208,6 +232,7 @@ while true; do
             esac
         ;;
 
+        #Case 5: User selects Update regardless of whether or not their code is updated
         "Update")
             cd $HOME/quainetwork/go-quai
             gum spin --spinner="line" --title="Updating your node" --spinner.foreground "#ec4d37" git pull origin main
@@ -237,13 +262,14 @@ while true; do
             esac
         ;;
 
+        #Case 6: User selects Start full node when their node is not running
         "Start Full Node")
             echo "------> $(gum style --foreground "#ec4d37" 'starting full node...')\n"
             cd $HOME/quainetwork/go-quai
             make run-full-node
             gum spin --spinner="line" --title="Loading logs: " --spinner.foreground "#ec4d37" sleep 2
             echo "------> $(gum style --foreground "#ec4d37" 'prime ')logs:\n"
-            tail -20 $HOME/quainetwork/go-quai/nodelogs/prime.log
+            tail -25 $HOME/quainetwork/go-quai/nodelogs/prime.log
             echo "\nDo you want to exit the script?\n"
             EXIT_CHOICE="$(gum choose  "Yes" "No")"
             case $EXIT_CHOICE in
@@ -264,10 +290,11 @@ while true; do
             ISRUNNING="true"
         ;;
 
-        "Start Mining Node and Manager")
+        #Case 7: User selects Start full node and manager when neither are running
+        "Start Full Node and Manager")
             # start running our full node that is primed for mining
             cd $HOME/quainetwork/go-quai
-            gum spin --spinner="line" --title="initializing node" --spinner.foreground "#ec4d37" make run-full-mining
+            gum spin --spinner="line" --title="initializing node" --spinner.foreground "#ec4d37" make run-full-node
             echo "------> $(gum style --foreground "#ec4d37" 'mining node ')started."
 
             # select region and zone for mining, start manager
@@ -281,10 +308,10 @@ while true; do
             # tail the logs
             echo "\n------> $(gum style --foreground "#ec4d37" 'prime node ')logs:\n"
             gum spin --spinner="line" --title="loading nodelogs: " --spinner.foreground "#ec4d37" sleep 2
-            tail -20 $HOME/quainetwork/go-quai/nodelogs/prime.log
+            tail -25 $HOME/quainetwork/go-quai/nodelogs/prime.log
             echo "\n------> $(gum style --foreground "#ec4d37" 'manager ')logs\n"
             gum spin --spinner="line" --title="loading manager logs: " --spinner.foreground "#ec4d37" sleep 2
-            tail -20 $HOME/quainetwork/quai-manager/logs/quai-manager.log
+            tail -25 $HOME/quainetwork/quai-manager/logs/quai-manager.log
             echo "\nDo you want to exit the script?\n"
             EXIT_CHOICE="$(gum choose  "Yes" "No")"
             case $EXIT_CHOICE in
@@ -305,7 +332,7 @@ while true; do
             ISRUNNING="false"
             ISMINING="true"
         ;;
-
+        #Case 8: User selects Stop when either the full node and manager or just full node is running
         "Stop")
             ###### CHANGE: stop both node and miner, miner first node second ######
             cd $HOME/quainetwork/quai-manager
@@ -335,6 +362,7 @@ while true; do
             ISMINING="false"
         ;;
 
+        #Case 9: User selects check node logs regardless of whether the node is running or not
         "Check Node logs")
             echo "$(gum style --foreground "#ec4d37" 'where would you like to view logs?')"
             LOGS_LOCATION=$(gum choose "Prime" "Region" "Zone")
@@ -343,14 +371,14 @@ while true; do
                     "Prime")
                         echo "\n------> $(gum style --foreground "#ec4d37" 'prime ')logs:\n"
                         gum spin --spinner="line" --title="loading logs: " --spinner.foreground "#ec4d37" sleep 2
-                        tail 30 $HOME/quainetwork/go-quai/nodelogs/prime.log
+                        tail -30 $HOME/quainetwork/go-quai/nodelogs/prime.log
                     ;;
 
                     "Region")
                         region=$(gum input --cursor.foreground="#ec4d37" --prompt "Which region? " --placeholder "1, 2, or 3")
                         echo "\n------> $(gum style --foreground "#ec4d37" 'region-'$region' ')logs:\n"
                         gum spin --spinner="line" --title="loading logs: " --spinner.foreground "#ec4d37" sleep 2
-                        tail 30 $HOME/quainetwork/go-quai/nodelogs/region-$region.log
+                        tail -30 $HOME/quainetwork/go-quai/nodelogs/region-$region.log
                     ;;
 
                     "Zone")
@@ -358,7 +386,7 @@ while true; do
                         zone=$(gum input --prompt "Which zone? " --placeholder "1, 2, or 3")
                         echo "\n------> $(gum style --foreground "#ec4d37" 'region-'$region' zone-'$zone' logs:')\n"
                         gum spin --spinner="line" --title="loading logs: " --spinner.foreground "#ec4d37" sleep 2
-                        tail 30 $HOME/quainetwork/go-quai/nodelogs/zone-$region-$zone.log
+                        tail -30 $HOME/quainetwork/go-quai/nodelogs/zone-$region-$zone.log
                     ;;
                 esac
             echo "\nDo you want to exit the script?\n"
@@ -379,6 +407,8 @@ while true; do
                 ;;
             esac
         ;;
+
+        #Case 10: User selects check manager logs regardless of whether the manager is running or not
         "Check Miner Logs")
             echo "\n------> $(gum style --foreground "#ec4d37" 'manager ')logs:\n"
             gum spin --spinner="line" --title="loading logs: " --spinner.foreground "#ec4d37" sleep 2
@@ -401,8 +431,10 @@ while true; do
                 ;;
             esac
         ;;
+
+        #Case 11: User selects to exit the script
         "Quit")
-            gum spin --spinner="line" --title="Exiting session" --spinner.foreground "#ec4d37" sleep 2
+            gum spin --spinner="line" --title="Exiting session - " --spinner.foreground "#ec4d37" sleep 2
             clear
             exit 0
         ;;
