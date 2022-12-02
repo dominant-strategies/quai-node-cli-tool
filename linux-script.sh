@@ -1,11 +1,7 @@
 #!/bin/bash
 
-# while-menu-dialog: a menu driven system information program
-
 DIALOG_CANCEL=1
 DIALOG_ESC=255
-HEIGHT=16
-WIDTH=50
 ISRUNNING="False"
 ISMINING="False"
 
@@ -29,16 +25,15 @@ while true; do
         STARTMINING="Manager - Running ✔"
     else
         STARTFULLNODE="Start Full Node"
-        STARTMINING="Start Full Node and Manager"
+        STARTMINING="Start Manager"
     fi
 
   exec 3>&1
   selection=$(dialog \
     --backtitle "Quai Hardware Manager" \
-    --title "Menu" \
     --clear \
     --cancel-label "EXIT" \
-    --menu "Please select:" $HEIGHT $WIDTH 10 \
+    --menu "What would you like to do?" 16 50 10 \
     "1" "$INSTALL_DISPLAY" \
     "2" "Update" \
     "3" "$STARTFULLNODE" \
@@ -46,19 +41,62 @@ while true; do
     "5" "Stop" \
     "6" "Print Node Logs" \
     "7" "Print Miner Logs" \
+    "8" "Edit Mining Addresses" \
     2>&1 1>&3)
   exit_status=$?
   exec 3>&-
   case $exit_status in
     $DIALOG_CANCEL)
-      clear
-      echo "Program terminated."
-      exit
+      # Verify the user wants to stop their node and manager
+      dialog --yesno "\nExit the program? This will stop your node and miner." 0 0
+      response=$?
+      EXIT="False"
+      case $response in
+          0) EXIT="True";;
+          1) EXIT="False";;
+          255) EXIT="False";;
+      esac
+      if $EXIT; then
+          #If user chooses stop, kill full node
+          cd $HOME/quainetwork/quai-manager
+          make stop>/dev/null 2>&1
+          cd $HOME/quainetwork/go-quai
+          make stop>/dev/null 2>&1 | \
+          dialog --title "Stop" \
+          --no-collapse \
+          --infobox "\nStopping Full-Node and/or Manager. Please wait."  0 0
+          ISMINING="False"
+          ISRUNNING="False"
+          clear
+        echo "Program terminated."
+        exit
+      fi
       ;;
     $DIALOG_ESC)
-      clear
-      echo "Program aborted." >&2
-      exit 1
+      # Verify the user wants to stop their node and manager
+      dialog --yesno "\nExit the program? This will stop your node and miner." 0 0
+      response=$?
+      EXIT="False"
+      case $response in
+          0) EXIT="True";;
+          1) EXIT="False";;
+          255) EXIT="False";;
+      esac
+      if $EXIT; then
+          #If user chooses stop, kill full node
+          cd $HOME/quainetwork/quai-manager
+          make stop>/dev/null 2>&1
+          cd $HOME/quainetwork/go-quai
+          make stop>/dev/null 2>&1 | \
+          dialog --title "Stop" \
+          --no-collapse \
+          --infobox "\nStopping Full-Node and/or Manager. Please wait."  0 0
+          ISMINING="False"
+          ISRUNNING="False"
+          clear
+        echo "Program terminated."
+        exit
+      fi
       ;;
   esac
   case $selection in
@@ -153,18 +191,19 @@ while true; do
             # Start go-quai
             cd $HOME/quainetwork/go-quai && make run-full-node
             ISRUNNING="True"
+            
+            # Ask the user if they would like to view nodelogs
             dialog --title "Alert" \
             --no-collapse \
-
-            # Ask the user if they would like to view nodelogs
-            --yesno  "\nFull-Node started. Would you like to view nodelogs?" 0 0
+            --yesno  "\nFull-Node started. Would you like to view the last 40 lines of your nodelogs?" 0 0
             response=$?
             case $response in
                 0) 
                     # Print nodelogs
                     cd
                     FILE=`dialog --stdout --title "Nodelog select" --fselect quainetwork/go-quai/nodelogs/ 14 48`
-                    dialog --title "$FILE" --tailbox $FILE 0 0
+                    result=`tail -40 $FILE`
+                    dialog --title "$FILE" --msgbox "\n$result" 30 90
                     ;;
                 1) clear;;
                 255) clear;;
@@ -177,24 +216,36 @@ while true; do
             dialog --title "Alert" \
             --no-collapse \
             --msgbox  "\nManager is already running." 0 0
+        elif ! $ISRUNNING; then
+            dialog --title "Alert" \
+            --no-collapse \
+            --msgbox  "\nPlease start your Full-Node before starting the Manager." 0 0
         else
-            REGION=`dialog --title "Region Select" --rangebox "Which region would you like to mine in?" 0 0 1 3`
-            ZONE=`dialog --title "Zone Select" --rangebox "Which zone would you like to mine in?" 0 0 1 3`
+            REGION=$(dialog --menu "Which regiond would you like to mine?" 0 0 3 \
+                1 "Cyprus" \
+                2 "Paxos" \
+                3 "Hydra" 3>&1 1>&2 2>&3 3>&- )
+            ZONE=$(dialog --menu "Which region would you like to mine?" 0 0 3 \
+                1 "Zone-0" \
+                2 "Zone-1" \
+                3 "Zone-2" 3>&1 1>&2 2>&3 3>&- )
 
             # Start go-quai
             cd $HOME/quainetwork/quai-manager && make run-full-mining region=$REGION zone=$ZONE
             ISMINING="True"
+            ISRUNNING="False"
+            
+            # Ask the user if they would like to view nodelogs
             dialog --title "Alert" \
             --no-collapse \
-
-            # Ask the user if they would like to view nodelogs
-            --yesno  "\nManager started. Would you like to view miner logs?" 0 0
+            --yesno  "\nManager started. Would you like to view the last 40 lines of your miner logs?" 0 0
             response=$?
             case $response in
                 0) 
                     # Print nodelogs
                     cd
-                    dialog --title "quainetwork/quai-manger/logs/quai-manager.log" --tailbox quainetwork/quai-manager/logs/quai-manager.log 0 0
+                    result=`tail -40 quainetwork/quai-manager/logs/quai-manager.log`
+                    dialog --title "quainetwork/quai-manger/logs/quai-manager.log" --msgbox "\n$result" 30 90
                     ;;
                 1) clear;;
                 255) clear;;
@@ -203,7 +254,7 @@ while true; do
       ;;
     5 )
         # Verify the user wants to stop their node and manager
-        dialog --yesno "\nAre you sure you want to stop the Full Node and Manager?" 0 0
+        dialog --yesno "\nAre you sure you want to stop the Full Node and/or Manager?" 0 0
         response=$?
         STOP="False"
         case $response in
@@ -213,28 +264,108 @@ while true; do
         esac
         if $STOP; then
             #If user chooses stop, kill full node
-            cd $HOME/quainetwork/quai-manager && make stop>/dev/null 2>&1 && cd $HOME/quainetwork/go-quai && make stop>/dev/null 2>&1 | \
+            cd $HOME/quainetwork/quai-manager
+            make stop>/dev/null 2>&1
+            cd $HOME/quainetwork/go-quai
+            make stop>/dev/null 2>&1 | \
             dialog --title "Stop" \
             --no-collapse \
-            --infobox "\nStopping Full-Node and Manager. Please wait."  0 0
+            --infobox "\nStopping Full-Node and/or Manager. Please wait."  0 0
             ISMINING="False"
             ISRUNNING="False"
             
             dialog --title "Stop" \
             --no-collapse \
-            --msgbox "\nFull-Node and Manager stopped. Press OK to return to the menu." 0 0
+            --msgbox "\nFull-Node and/or Manager stopped. Press OK to return to the menu." 0 0
         fi
       ;;
     6 )
         #Print nodelogs
         cd
         FILE=`dialog --stdout --title "Nodelog select" --fselect quainetwork/go-quai/nodelogs/ 14 48`
-        dialog --title "$FILE" --tailbox $FILE 0 0
+        dialog --pause "This will show the last 40 lines of your nodelogs. Press OK to continue." 10 40 2
+        result=`tail -40 $FILE`
+        dialog --title "$FILE" --no-collapse --msgbox "\n$result" 30 90
       ;;
     7 )
         # Print Miner Logs
         cd
-        dialog --title "quainetwork/quai-manger/logs/quai-manager.log" --tailbox quainetwork/quai-manager/logs/quai-manager.log 0 0
+        dialog --pause "This will show the last 40 lines of your miner logs. Press OK to continue." 10 40 2
+        result=`tail -40 quainetwork/quai-manager/logs/quai-manager.log`
+        dialog --title "quainetwork/quai-manger/logs/quai-manager.log" --msgbox "\n$result" 30 90
       ;;
+    8 )
+        # Edit coinbase addresses in network.env
+        cd $HOME/quainetwork/go-quai
+        LOCATION=$(dialog --menu "Which mining address would you like to edit?" 0 0 13 \
+                1 "Prime" \
+                2 "Cyprus" \
+                3 "Paxos" \
+                4 "Hydra" \
+                5 "Cyprus-0" \
+                6 "Cyprus-1" \
+                7 "Cyprus-2" \
+                8 "Paxos-0" \
+                9 "Paxos-1" \
+                10 "Paxos-2" \
+                11 "Hydra-0" \
+                12 "Hydra-1" \
+                13 "Hydra-2" 3>&1 1>&2 2>&3 3>&- )
+            case $LOCATION in
+            1)
+                ADDRESS=$(dialog --inputbox "Enter your Prime mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                sed -i.save "s/^PRIME_COINBASE *=.*/PRIME_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Prime address updated." 0 0
+                ;;
+            2)
+                ADDRESS=$(dialog --inputbox "Enter your Cyprus mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                sed -i.save "s/^REGION_1_COINBASE *=.*/REGION_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus address updated." 0 0
+                ;;
+            3)
+                ADDRESS=$(dialog --inputbox "Enter your Paxos mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                sed -i.save "s/^REGION_2_COINBASE *=.*/REGION_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos address updated." 0 0
+                ;;
+            4)
+                ADDRESS=$(dialog --inputbox "Enter your Hydra mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                sed -i.save "s/^REGION_3_COINBASE *=.*/REGION_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra address updated." 0 0                
+                ;;
+            5)
+                ADDRESS=$(dialog --inputbox "Enter your Cyprus-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                sed -i.save "s/^ZONE_1_1_COINBASE *=.*/ZONE_1_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-1 address updated." 0 0               
+                ;;
+            6)
+                ADDRESS=$(dialog --inputbox "Enter your Cyprus-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                sed -i.save "s/^ZONE_1_2_COINBASE *=.*/ZONE_1_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-2 address updated." 0 0            
+                ;;
+            7)
+                ADDRESS=$(dialog --inputbox "Enter your Cyprus-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                sed -i.save "s/^ZONE_1_3_COINBASE *=.*/ZONE_1_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-3 address updated." 0 0               
+                ;;
+            8)
+                ADDRESS=$(dialog --inputbox "Enter your Paxos-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                sed -i.save "s/^ZONE_2_1_COINBASE *=.*/ZONE_2_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-1 address updated." 0 0            
+                ;;
+            9)  
+                ADDRESS=$(dialog --inputbox "Enter your Paxos-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                sed -i.save "s/^ZONE_2_2_COINBASE *=.*/ZONE_2_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-2 address updated." 0 0               
+                ;;
+            10)
+                ADDRESS=$(dialog --inputbox "Enter your Paxos-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                sed -i.save "s/^ZONE_2_3_COINBASE *=.*/ZONE_2_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-3 address updated." 0 0                
+                ;;
+            11)
+                ADDRESS=$(dialog --inputbox "Enter your Hydra-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                sed -i.save "s/^ZONE_3_1_COINBASE *=.*/ZONE_3_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-1 address updated." 0 0               
+                ;;
+            12)
+                ADDRESS=$(dialog --inputbox "Enter your Hydra-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                sed -i.save "s/^ZONE_3_2_COINBASE *=.*/ZONE_3_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-2 address updated." 0 0                
+                ;;
+            13)
+                ADDRESS=$(dialog --inputbox "Enter your Hydra-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                sed -i.save "s/^ZONE_3_3_COINBASE *=.*/ZONE_3_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-3 address updated." 0 0           
+                ;;
+            esac
+        rm -rf network.env.save
+        
   esac
 done
