@@ -33,7 +33,7 @@ while true; do
     --backtitle "Quai Hardware Manager" \
     --clear \
     --cancel-label "EXIT" \
-    --menu "What would you like to do?" 16 50 10 \
+    --menu "Select an Option:" 16 50 10 \
     "1" "$INSTALL_DISPLAY" \
     "2" "Update" \
     "3" "$STARTFULLNODE" \
@@ -48,7 +48,7 @@ while true; do
   case $exit_status in
     $DIALOG_CANCEL)
       # Verify the user wants to stop their node and manager
-      dialog --yesno "\nExit the program? This will stop your node and miner." 0 0
+      dialog --title "Alert" --yesno "\nExit the program? This will stop your node and miner." 0 0
       response=$?
       EXIT="False"
       case $response in
@@ -177,7 +177,7 @@ while true; do
         --no-collapse \
         --infobox "\nUpdating Manager. Please wait."  7 28
 
-        dialog --title "Alert" \
+        dialog --title "Update" \
         --no-collapse \
         --msgbox "\nManager updated. Press OK to return to the menu." 0 0
       ;;
@@ -199,11 +199,66 @@ while true; do
             response=$?
             case $response in
                 0) 
-                    # Print nodelogs
+                    #Print nodelogs
                     cd
-                    FILE=`dialog --stdout --title "Nodelog select" --fselect quainetwork/go-quai/nodelogs/ 14 48`
+                    LOCATION=$(dialog --menu "In which location would you like to view nodelogs?" 0 0 13 \
+                            1 "Prime" \
+                            2 "Cyprus" \
+                            3 "Paxos" \
+                            4 "Hydra" \
+                            5 "Cyprus-0" \
+                            6 "Cyprus-1" \
+                            7 "Cyprus-2" \
+                            8 "Paxos-0" \
+                            9 "Paxos-1" \
+                            10 "Paxos-2" \
+                            11 "Hydra-0" \
+                            12 "Hydra-1" \
+                            13 "Hydra-2" 3>&1 1>&2 2>&3 3>&- )
+                    dialog --pause "This will show the last 40 lines of your nodelogs. Press OK to continue." 10 40 2
+                    case $LOCATION in
+                        1) 
+                            FILE="quainetwork/go-quai/nodelogs/prime.log"
+                            ;;
+                        2)
+                            FILE="quainetwork/go-quai/nodelogs/region-1.log"
+                            ;;
+                        3)
+                            FILE="quainetwork/go-quai/nodelogs/region-2.log"
+                            ;;
+                        4)
+                            FILE="quainetwork/go-quai/nodelogs/region-3.log"
+                            ;;
+                        5)
+                            FILE="quainetwork/go-quai/nodelogs/zone-1-1.log"
+                            ;;
+                        6)
+                            FILE="quainetwork/go-quai/nodelogs/zone-1-2.log"
+                            ;;
+                        7)
+                            FILE="quainetwork/go-quai/nodelogs/zone-1-3.log"
+                            ;;
+                        8)
+                            FILE="quainetwork/go-quai/nodelogs/zone-2-1.log"
+                            ;;
+                        9)
+                            FILE="quainetwork/go-quai/nodelogs/zone-2-2.log"
+                            ;;
+                        10)
+                            FILE="quainetwork/go-quai/nodelogs/zone-2-3.log"
+                            ;;
+                        11)
+                            FILE="quainetwork/go-quai/nodelogs/zone-3-1.log"
+                            ;;
+                        12)
+                            FILE="quainetwork/go-quai/nodelogs/zone-3-2.log"
+                            ;;
+                        13)
+                            FILE="quainetwork/go-quai/nodelogs/zone-3-3.log"
+                            ;;
+                    esac
                     result=`tail -40 $FILE`
-                    dialog --title "$FILE" --msgbox "\n$result" 30 90
+                    dialog --title "$FILE" --no-collapse --msgbox "\n$result" 30 90
                     ;;
                 1) clear;;
                 255) clear;;
@@ -254,7 +309,7 @@ while true; do
       ;;
     5 )
         # Verify the user wants to stop their node and manager
-        dialog --yesno "\nAre you sure you want to stop the Full Node and/or Manager?" 0 0
+        dialog --title "Alert" --yesno "\nAre you sure you want to stop the Full Node and/or Manager?" 0 0
         response=$?
         STOP="False"
         case $response in
@@ -282,22 +337,7 @@ while true; do
     6 )
         #Print nodelogs
         cd
-        FILE=`dialog --stdout --title "Nodelog select" --fselect quainetwork/go-quai/nodelogs/ 14 48`
-        dialog --pause "This will show the last 40 lines of your nodelogs. Press OK to continue." 10 40 2
-        result=`tail -40 $FILE`
-        dialog --title "$FILE" --no-collapse --msgbox "\n$result" 30 90
-      ;;
-    7 )
-        # Print Miner Logs
-        cd
-        dialog --pause "This will show the last 40 lines of your miner logs. Press OK to continue." 10 40 2
-        result=`tail -40 quainetwork/quai-manager/logs/quai-manager.log`
-        dialog --title "quainetwork/quai-manger/logs/quai-manager.log" --msgbox "\n$result" 30 90
-      ;;
-    8 )
-        # Edit coinbase addresses in network.env
-        cd $HOME/quainetwork/go-quai
-        LOCATION=$(dialog --menu "Which mining address would you like to edit?" 0 0 13 \
+        LOCATION=$(dialog --menu "In which location would you like to view nodelogs?" 0 0 13 \
                 1 "Prime" \
                 2 "Cyprus" \
                 3 "Paxos" \
@@ -311,61 +351,140 @@ while true; do
                 11 "Hydra-0" \
                 12 "Hydra-1" \
                 13 "Hydra-2" 3>&1 1>&2 2>&3 3>&- )
-            case $LOCATION in
-            1)
-                ADDRESS=$(dialog --inputbox "Enter your Prime mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                sed -i.save "s/^PRIME_COINBASE *=.*/PRIME_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Prime address updated." 0 0
+        dialog --pause "This will show the last 40 lines of your nodelogs. Press OK to continue." 10 40 2
+        case $LOCATION in
+            1) 
+                FILE="quainetwork/go-quai/nodelogs/prime.log"
                 ;;
             2)
-                ADDRESS=$(dialog --inputbox "Enter your Cyprus mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                sed -i.save "s/^REGION_1_COINBASE *=.*/REGION_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus address updated." 0 0
+                FILE="quainetwork/go-quai/nodelogs/region-1.log"
                 ;;
             3)
-                ADDRESS=$(dialog --inputbox "Enter your Paxos mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                sed -i.save "s/^REGION_2_COINBASE *=.*/REGION_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos address updated." 0 0
+                FILE="quainetwork/go-quai/nodelogs/region-2.log"
                 ;;
             4)
-                ADDRESS=$(dialog --inputbox "Enter your Hydra mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                sed -i.save "s/^REGION_3_COINBASE *=.*/REGION_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra address updated." 0 0                
+                FILE="quainetwork/go-quai/nodelogs/region-3.log"
                 ;;
             5)
-                ADDRESS=$(dialog --inputbox "Enter your Cyprus-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                sed -i.save "s/^ZONE_1_1_COINBASE *=.*/ZONE_1_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-1 address updated." 0 0               
+                FILE="quainetwork/go-quai/nodelogs/zone-1-1.log"
                 ;;
             6)
-                ADDRESS=$(dialog --inputbox "Enter your Cyprus-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                sed -i.save "s/^ZONE_1_2_COINBASE *=.*/ZONE_1_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-2 address updated." 0 0            
+                FILE="quainetwork/go-quai/nodelogs/zone-1-2.log"
                 ;;
             7)
-                ADDRESS=$(dialog --inputbox "Enter your Cyprus-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                sed -i.save "s/^ZONE_1_3_COINBASE *=.*/ZONE_1_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-3 address updated." 0 0               
+                FILE="quainetwork/go-quai/nodelogs/zone-1-3.log"
                 ;;
             8)
-                ADDRESS=$(dialog --inputbox "Enter your Paxos-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                sed -i.save "s/^ZONE_2_1_COINBASE *=.*/ZONE_2_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-1 address updated." 0 0            
+                FILE="quainetwork/go-quai/nodelogs/zone-2-1.log"
                 ;;
-            9)  
-                ADDRESS=$(dialog --inputbox "Enter your Paxos-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                sed -i.save "s/^ZONE_2_2_COINBASE *=.*/ZONE_2_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-2 address updated." 0 0               
+            9)
+                FILE="quainetwork/go-quai/nodelogs/zone-2-2.log"
                 ;;
             10)
-                ADDRESS=$(dialog --inputbox "Enter your Paxos-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                sed -i.save "s/^ZONE_2_3_COINBASE *=.*/ZONE_2_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-3 address updated." 0 0                
+                FILE="quainetwork/go-quai/nodelogs/zone-2-3.log"
                 ;;
             11)
-                ADDRESS=$(dialog --inputbox "Enter your Hydra-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                sed -i.save "s/^ZONE_3_1_COINBASE *=.*/ZONE_3_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-1 address updated." 0 0               
+                FILE="quainetwork/go-quai/nodelogs/zone-3-1.log"
                 ;;
             12)
-                ADDRESS=$(dialog --inputbox "Enter your Hydra-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                sed -i.save "s/^ZONE_3_2_COINBASE *=.*/ZONE_3_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-2 address updated." 0 0                
+                FILE="quainetwork/go-quai/nodelogs/zone-3-2.log"
                 ;;
             13)
-                ADDRESS=$(dialog --inputbox "Enter your Hydra-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                sed -i.save "s/^ZONE_3_3_COINBASE *=.*/ZONE_3_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-3 address updated." 0 0           
+                FILE="quainetwork/go-quai/nodelogs/zone-3-3.log"
                 ;;
-            esac
-        rm -rf network.env.save
-        
+        esac
+        result=`tail -40 $FILE`
+        dialog --title "$FILE" --no-collapse --msgbox "\n$result" 30 90
+      ;;
+    7 )
+        # Print Miner Logs
+        cd
+        dialog --pause "This will show the last 40 lines of your miner logs. Press OK to continue." 10 40 2
+        result=`tail -40 quainetwork/quai-manager/logs/quai-manager.log`
+        dialog --title "quainetwork/quai-manger/logs/quai-manager.log" --msgbox "\n$result" 30 90
+      ;;
+    8 )
+        # Edit coinbase addresses in network.env
+        if $ISMINING; then
+            dialog --title "Alert" \
+            --no-collapse \
+            --msgbox  "\nPlease stop your node and manager to edit mining addresses." 0 0
+        elif $ISRUNNING; then
+            dialog --title "Alert" \
+            --no-collapse \
+            --msgbox  "\nPlease stop your node and manager to edit mining addresses." 0 0
+        else
+            cd $HOME/quainetwork/go-quai
+            LOCATION=$(dialog --menu "Which mining address would you like to edit?" 0 0 13 \
+                    1 "Prime" \
+                    2 "Cyprus" \
+                    3 "Paxos" \
+                    4 "Hydra" \
+                    5 "Cyprus-0" \
+                    6 "Cyprus-1" \
+                    7 "Cyprus-2" \
+                    8 "Paxos-0" \
+                    9 "Paxos-1" \
+                    10 "Paxos-2" \
+                    11 "Hydra-0" \
+                    12 "Hydra-1" \
+                    13 "Hydra-2" 3>&1 1>&2 2>&3 3>&- )
+                case $LOCATION in
+                1)
+                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Prime mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^PRIME_COINBASE *=.*/PRIME_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Prime address updated." 0 0
+                    ;;
+                2)
+                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Cyprus mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^REGION_1_COINBASE *=.*/REGION_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus address updated." 0 0
+                    ;;
+                3)
+                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Paxos mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^REGION_2_COINBASE *=.*/REGION_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos address updated." 0 0
+                    ;;
+                4)
+                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Hydra mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^REGION_3_COINBASE *=.*/REGION_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra address updated." 0 0                
+                    ;;
+                5)
+                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Cyprus-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^ZONE_1_1_COINBASE *=.*/ZONE_1_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-1 address updated." 0 0               
+                    ;;
+                6)
+                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Cyprus-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^ZONE_1_2_COINBASE *=.*/ZONE_1_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-2 address updated." 0 0            
+                    ;;
+                7)
+                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Cyprus-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^ZONE_1_3_COINBASE *=.*/ZONE_1_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-3 address updated." 0 0               
+                    ;;
+                8)
+                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Paxos-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^ZONE_2_1_COINBASE *=.*/ZONE_2_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-1 address updated." 0 0            
+                    ;;
+                9)  
+                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Paxos-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^ZONE_2_2_COINBASE *=.*/ZONE_2_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-2 address updated." 0 0               
+                    ;;
+                10)
+                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Paxos-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^ZONE_2_3_COINBASE *=.*/ZONE_2_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-3 address updated." 0 0                
+                    ;;
+                11)
+                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Hydra-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^ZONE_3_1_COINBASE *=.*/ZONE_3_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-1 address updated." 0 0               
+                    ;;
+                12)
+                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Hydra-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^ZONE_3_2_COINBASE *=.*/ZONE_3_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-2 address updated." 0 0                
+                    ;;
+                13)
+                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Hydra-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^ZONE_3_3_COINBASE *=.*/ZONE_3_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-3 address updated." 0 0           
+                    ;;
+                esac
+            rm -rf network.env.save
+        fi
+        ;;
   esac
 done
