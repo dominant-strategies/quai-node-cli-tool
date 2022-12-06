@@ -7,6 +7,14 @@ ISMINING="False"
 NODELOGS="False"
 MININGLOGS="False"
 
+STYLECONFIG=~/.dialogrc
+if [ -f "$STYLECONFIG" ]; then
+    echo "Styling config found."
+else
+    dialog --create-rc $STYLECONFIG
+    cp .dialogrc ~/.dialogrc
+fi
+
 while true; do
     arr=("$HOME/quainetwork/go-quai" "$HOME/quainetwork/quai-manager")
     for i in "${arr[@]}"; do
