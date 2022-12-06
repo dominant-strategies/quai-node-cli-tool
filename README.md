@@ -1,6 +1,6 @@
 # quai-node-cli-tool
 
-A simple, CLI interface for installing, building, and running your Quai Network node and manager.
+A simple, CLI interface for installing, configuring, and running your Quai Network node and manager.
 
 ## Getting Started
 
