@@ -17,14 +17,22 @@ This repository is a work in progress and is made purely to simplify the interac
 
 - Clone this repository
 - Install dependencies
-- dialog can be installed using your favorite package manager
+- Install dialog using your favorite package manager
   - `sudo apt install dialog` (Ubuntu)
   - `sudo yum install dialog` (CentOS)
   - `brew install dialog` (MacOS)
 
+## Getting Started
+
+This script comes with base styling. If you would like to use the styling found in this readme, you must configure it with the `.dialogrc` file. To do this, open up a terminal window and navigate to the directory where you cloned the repo and run the following command:
+
+```
+cp .dialogrc ~/.dialogrc
+```
+
 ## Executing Program
 
-Open up a terminal window and navigate to the directory where you cloned the repo. To run the base script, run the following command:
+To run the base script, run the following command:
 
 ```
 sh quai.sh
