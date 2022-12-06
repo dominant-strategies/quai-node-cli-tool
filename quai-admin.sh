@@ -209,7 +209,7 @@ while true; do
             --msgbox  "\nFull-Node is already running." 0 0
         else
             # Start go-quai
-            cd $HOME/quainetwork/go-quai && make run-full-node
+            cd $HOME/quainetwork/go-quai && make run-full-mining
             ISRUNNING="True"
             NODELOGS="True"
             
@@ -236,7 +236,6 @@ while true; do
                             11 "Hydra-0" \
                             12 "Hydra-1" \
                             13 "Hydra-2" 3>&1 1>&2 2>&3 3>&- )
-                    dialog --pause "This will show the last 40 lines of your nodelogs. Press OK to continue." 10 40 2
                     case $LOCATION in
                         1) 
                             FILE="quainetwork/go-quai/nodelogs/prime.log"
@@ -279,7 +278,7 @@ while true; do
                             ;;
                     esac
                     result=`tail -40 $FILE`
-                    dialog --title "$FILE" --no-collapse --msgbox "\n$result" 30 90
+                    dialog --cr-wrap --title "$FILE" --no-collapse --msgbox "\n$result" 30 90
                     ;;
                 1) clear;;
                 255) clear;;
@@ -323,7 +322,7 @@ while true; do
                     # Print nodelogs
                     cd
                     result=`tail -40 quainetwork/quai-manager/logs/quai-manager.log`
-                    dialog --title "quainetwork/quai-manger/logs/quai-manager.log" --msgbox "\n$result" 30 90
+                    dialog --cr-wrap --title "quainetwork/quai-manger/logs/quai-manager.log" --msgbox "\n$result" 30 90
                     ;;
                 1) clear;;
                 255) clear;;
@@ -422,7 +421,7 @@ while true; do
                     ;;
             esac
             result=`tail -40 $FILE`
-            dialog --title "$FILE" --no-collapse --msgbox "\n$result" 30 90
+            dialog --cr-wrap --title "$FILE" --msgbox "\n$result" 0 0
         fi
       ;;
     7 )
@@ -435,7 +434,7 @@ while true; do
             cd
             dialog --nocancel --pause "This will show the last 40 lines of your miner logs. Press OK to continue." 10 40 2
             result=`tail -40 quainetwork/quai-manager/logs/quai-manager.log`
-            dialog --title "quainetwork/quai-manager/logs/quai-manager.log" --msgbox "\n$result" 30 90
+            dialog --cr-wrap --title "quainetwork/quai-manager/logs/quai-manager.log" --msgbox "\n$result" 30 90
         fi
       ;;
     8 )
@@ -538,24 +537,34 @@ while true; do
                 cp /tmp/network.env network.env
                 rm -rf /tmp/network.env
             fi
-            make go-quai
+            make go-quai>/dev/null 2>&1
             dialog --msgbox "network.env updated." 0 0
         fi
     ;;
     10)
         # Clear db
-        dialog --yesno "Are you sure you want to clear your database and logs?" 0 0
-        if [ $? -eq 0 ]; then
-            cd $HOME/quainetwork/go-quai
-            rm -rf nodelogs
-            rm -rf ~/Library/Quai
-            yes | ./build/bin/quai removedb
-            cd $HOME/quainetwork/quai-manager/logs
-            rm -rf quai-manager.log
-            NODELOGS="False"
-            MININGLOGS="False"
-            dialog --msgbox "Database cleared. Nodelogs removed." 0 0
-        fi  
+        if $ISMINING; then
+            dialog --title "Alert" \
+            --no-collapse \
+            --msgbox  "\nPlease stop your node and manager to clear the db." 0 0
+        elif $ISRUNNING; then
+            dialog --title "Alert" \
+            --no-collapse \
+            --msgbox  "\nPlease stop your node and manager to clear the db." 0 0
+        else
+            dialog --yesno "Are you sure you want to clear your database and logs?" 0 0
+            if [ $? -eq 0 ]; then
+                cd $HOME/quainetwork/go-quai
+                rm -rf nodelogs
+                rm -rf ~/Library/Quai
+                yes | ./build/bin/quai removedb
+                cd $HOME/quainetwork/quai-manager/logs
+                rm -rf quai-manager.log
+                NODELOGS="False"
+                MININGLOGS="False"
+                dialog --cr-wrap --msgbox "Database cleared. Nodelogs removed." 0 0
+            fi 
+        fi
     ;;
   esac
 done

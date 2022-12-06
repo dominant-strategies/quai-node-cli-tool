@@ -4,6 +4,8 @@ DIALOG_CANCEL=1
 DIALOG_ESC=255
 ISRUNNING="False"
 ISMINING="False"
+NODELOGS="False"
+MININGLOGS="False"
 
 while true; do
     arr=("$HOME/quainetwork/go-quai" "$HOME/quainetwork/quai-manager")
@@ -16,6 +18,14 @@ while true; do
             INSTALL_DISPLAY="Install"
         fi
     done
+
+    if [ -d "$HOME/quainetwork/go-quai/nodelogs" ]; then
+        NODELOGS="True"
+    fi
+
+    if [ -d "$HOME/quainetwork/quai-manager/logs" ]; then
+        MININGLOGS="True"
+    fi
 
     if $ISRUNNING; then
         STARTFULLNODE="Full Node - Running ✔"
@@ -33,7 +43,7 @@ while true; do
     --backtitle "Quai Hardware Manager" \
     --clear \
     --cancel-label "EXIT" \
-    --menu "Select an Option:" 16 50 10 \
+    --menu "Select an Option:" 14 50 10 \
     "1" "$INSTALL_DISPLAY" \
     "2" "Update" \
     "3" "$STARTFULLNODE" \
@@ -41,7 +51,6 @@ while true; do
     "5" "Stop" \
     "6" "Print Node Logs" \
     "7" "Print Miner Logs" \
-    "8" "Edit Mining Addresses" \
     2>&1 1>&3)
   exit_status=$?
   exec 3>&-
@@ -112,50 +121,58 @@ while true; do
         MAIN_DIR="quainetwork"
         mkdir $MAIN_DIR
 
-        # Clone into go-quai
-        cd $MAIN_DIR
-        git clone https://github.com/dominant-strategies/go-quai>/dev/null 2>&1 | \
-        dialog --title "Installation" \
-        --no-collapse \
-        --infobox "\nInstalling Full-Node. Please wait."  7 28
+        dialog --yesno "\nThis will install go-quai and quai-manager in the HOME directory. Continue?" 0 0
+        response=$?
+        case $response in
+            0) 
+                # Clone into go-quai
+                cd $MAIN_DIR
+                git clone https://github.com/dominant-strategies/go-quai>/dev/null 2>&1 | \
+                dialog --title "Installation" \
+                --no-collapse \
+                --infobox "\nInstalling Full-Node. Please wait."  7 28
 
-        dialog --title "Installation" \
-        --no-collapse \
-        --msgbox "\nFull-Node installed. Press OK to continue." 7 28
+                dialog --title "Installation" \
+                --no-collapse \
+                --msgbox "\nFull-Node installed. Press OK to continue." 7 28
 
-        #Configure go-quai
-        cd $HOME/$MAIN_DIR/go-quai
-        cp network.env.dist network.env
-        make go-quai>/dev/null 2>&1 | 
-        dialog --title "Installation" \
-        --no-collapse \
-        --infobox "\nGenerating binaries. Please wait. " 7 28
+                #Configure go-quai
+                cd $HOME/$MAIN_DIR/go-quai
+                cp network.env.dist network.env
+                make go-quai>/dev/null 2>&1 | 
+                dialog --title "Installation" \
+                --no-collapse \
+                --infobox "\nGenerating binaries. Please wait. " 7 28
 
-        dialog --title "Installation" \
-        --no-collapse \
-        --msgbox "\nFull-Node configured. Press OK to continue." 7 28
+                dialog --title "Installation" \
+                --no-collapse \
+                --msgbox "\nFull-Node configured. Press OK to continue." 7 28
 
-        # Clone into quai-manager
-        cd $HOME/$MAIN_DIR
-        git clone https://github.com/dominant-strategies/quai-manager>/dev/null 2>&1 | \
-        dialog --title "Installation" \
-        --no-collapse \
-        --infobox "\nInstalling Manager. Please wait."  7 28
+                # Clone into quai-manager
+                cd $HOME/$MAIN_DIR
+                git clone https://github.com/dominant-strategies/quai-manager>/dev/null 2>&1 | \
+                dialog --title "Installation" \
+                --no-collapse \
+                --infobox "\nInstalling Manager. Please wait."  7 28
 
-        dialog --title "Installation" \
-        --no-collapse \
-        --msgbox "\nManager installed. Press OK to continue." 7 28
+                dialog --title "Installation" \
+                --no-collapse \
+                --msgbox "\nManager installed. Press OK to continue." 7 28
 
-        #Configure quai-manager
-        cd $HOME/$MAIN_DIR/quai-manager
-        make quai-manager>/dev/null 2>&1 | \
-        dialog --title "Installation" 
-        --no-collapse \
-        --infobox "\nGenerating binaries. Please wait. " 7 28
+                #Configure quai-manager
+                cd $HOME/$MAIN_DIR/quai-manager
+                make quai-manager>/dev/null 2>&1 | \
+                dialog --title "Installation" 
+                --no-collapse \
+                --infobox "\nGenerating binaries. Please wait. " 7 28
 
-        dialog --title "Installation" \
-        --no-collapse \
-        --msgbox "\nManager configured. Installation complete. Press OK to return to the menu." 0 0
+                dialog --title "Installation" \
+                --no-collapse \
+                --msgbox "\nManager configured. Installation complete. Press OK to return to the menu." 0 0
+                ;;
+            1) INSTALL="False";;
+            255) INSTALL="False";;
+        esac
       fi
       ;;
     2 )
@@ -189,8 +206,9 @@ while true; do
             --msgbox  "\nFull-Node is already running." 0 0
         else
             # Start go-quai
-            cd $HOME/quainetwork/go-quai && make run-full-node
+            cd $HOME/quainetwork/go-quai && make run-full-mining
             ISRUNNING="True"
+            NODELOGS="True"
             
             # Ask the user if they would like to view nodelogs
             dialog --title "Alert" \
@@ -201,7 +219,7 @@ while true; do
                 0) 
                     #Print nodelogs
                     cd
-                    LOCATION=$(dialog --menu "In which location would you like to view nodelogs?" 0 0 13 \
+                    LOCATION=$(dialog --nocancel --menu "In which location would you like to view nodelogs?" 0 0 13 \
                             1 "Prime" \
                             2 "Cyprus" \
                             3 "Paxos" \
@@ -215,7 +233,6 @@ while true; do
                             11 "Hydra-0" \
                             12 "Hydra-1" \
                             13 "Hydra-2" 3>&1 1>&2 2>&3 3>&- )
-                    dialog --pause "This will show the last 40 lines of your nodelogs. Press OK to continue." 10 40 2
                     case $LOCATION in
                         1) 
                             FILE="quainetwork/go-quai/nodelogs/prime.log"
@@ -258,7 +275,7 @@ while true; do
                             ;;
                     esac
                     result=`tail -40 $FILE`
-                    dialog --title "$FILE" --no-collapse --msgbox "\n$result" 30 90
+                    dialog --cr-wrap --title "$FILE" --no-collapse --msgbox "\n$result" 30 90
                     ;;
                 1) clear;;
                 255) clear;;
@@ -266,7 +283,7 @@ while true; do
         fi
       ;;
     4 )
-        #If node is running, redirect back to menu
+        #If manager is running, redirect back to menu
         if $ISMINING; then
             dialog --title "Alert" \
             --no-collapse \
@@ -276,19 +293,21 @@ while true; do
             --no-collapse \
             --msgbox  "\nPlease start your Full-Node before starting the Manager." 0 0
         else
-            REGION=$(dialog --menu "Which regiond would you like to mine?" 0 0 3 \
+            REGION=$(dialog --nocancel --menu "Which regiond would you like to mine?" 0 0 3 \
                 1 "Cyprus" \
                 2 "Paxos" \
                 3 "Hydra" 3>&1 1>&2 2>&3 3>&- )
-            ZONE=$(dialog --menu "Which region would you like to mine?" 0 0 3 \
+            ZONE=$(dialog --nocancel --menu "Which region would you like to mine?" 0 0 3 \
                 1 "Zone-0" \
                 2 "Zone-1" \
                 3 "Zone-2" 3>&1 1>&2 2>&3 3>&- )
 
             # Start go-quai
-            cd $HOME/quainetwork/quai-manager && make run-full-mining region=$REGION zone=$ZONE
+            cd $HOME/quainetwork/quai-manager && make run-background region=$REGION zone=$ZONE
             ISMINING="True"
             ISRUNNING="False"
+            NODELOGS="True"
+            MININGLOGS="True"
             
             # Ask the user if they would like to view nodelogs
             dialog --title "Alert" \
@@ -300,7 +319,7 @@ while true; do
                     # Print nodelogs
                     cd
                     result=`tail -40 quainetwork/quai-manager/logs/quai-manager.log`
-                    dialog --title "quainetwork/quai-manger/logs/quai-manager.log" --msgbox "\n$result" 30 90
+                    dialog --cr-wrap --title "quainetwork/quai-manger/logs/quai-manager.log" --msgbox "\n$result" 30 90
                     ;;
                 1) clear;;
                 255) clear;;
@@ -335,87 +354,14 @@ while true; do
         fi
       ;;
     6 )
-        #Print nodelogs
-        cd
-        LOCATION=$(dialog --menu "In which location would you like to view nodelogs?" 0 0 13 \
-                1 "Prime" \
-                2 "Cyprus" \
-                3 "Paxos" \
-                4 "Hydra" \
-                5 "Cyprus-0" \
-                6 "Cyprus-1" \
-                7 "Cyprus-2" \
-                8 "Paxos-0" \
-                9 "Paxos-1" \
-                10 "Paxos-2" \
-                11 "Hydra-0" \
-                12 "Hydra-1" \
-                13 "Hydra-2" 3>&1 1>&2 2>&3 3>&- )
-        dialog --pause "This will show the last 40 lines of your nodelogs. Press OK to continue." 10 40 2
-        case $LOCATION in
-            1) 
-                FILE="quainetwork/go-quai/nodelogs/prime.log"
-                ;;
-            2)
-                FILE="quainetwork/go-quai/nodelogs/region-1.log"
-                ;;
-            3)
-                FILE="quainetwork/go-quai/nodelogs/region-2.log"
-                ;;
-            4)
-                FILE="quainetwork/go-quai/nodelogs/region-3.log"
-                ;;
-            5)
-                FILE="quainetwork/go-quai/nodelogs/zone-1-1.log"
-                ;;
-            6)
-                FILE="quainetwork/go-quai/nodelogs/zone-1-2.log"
-                ;;
-            7)
-                FILE="quainetwork/go-quai/nodelogs/zone-1-3.log"
-                ;;
-            8)
-                FILE="quainetwork/go-quai/nodelogs/zone-2-1.log"
-                ;;
-            9)
-                FILE="quainetwork/go-quai/nodelogs/zone-2-2.log"
-                ;;
-            10)
-                FILE="quainetwork/go-quai/nodelogs/zone-2-3.log"
-                ;;
-            11)
-                FILE="quainetwork/go-quai/nodelogs/zone-3-1.log"
-                ;;
-            12)
-                FILE="quainetwork/go-quai/nodelogs/zone-3-2.log"
-                ;;
-            13)
-                FILE="quainetwork/go-quai/nodelogs/zone-3-3.log"
-                ;;
-        esac
-        result=`tail -40 $FILE`
-        dialog --title "$FILE" --no-collapse --msgbox "\n$result" 30 90
-      ;;
-    7 )
-        # Print Miner Logs
-        cd
-        dialog --pause "This will show the last 40 lines of your miner logs. Press OK to continue." 10 40 2
-        result=`tail -40 quainetwork/quai-manager/logs/quai-manager.log`
-        dialog --title "quainetwork/quai-manger/logs/quai-manager.log" --msgbox "\n$result" 30 90
-      ;;
-    8 )
-        # Edit coinbase addresses in network.env
-        if $ISMINING; then
+        if ! $NODELOGS; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and manager to edit mining addresses." 0 0
-        elif $ISRUNNING; then
-            dialog --title "Alert" \
-            --no-collapse \
-            --msgbox  "\nPlease stop your node and manager to edit mining addresses." 0 0
+            --msgbox "\nPlease start your full-node before viewing nodelogs." 0 0
         else
-            cd $HOME/quainetwork/go-quai
-            LOCATION=$(dialog --menu "Which mining address would you like to edit?" 0 0 13 \
+            #Print nodelogs
+            cd
+            LOCATION=$(dialog --nocancel --menu "In which location would you like to view nodelogs?" 0 0 13 \
                     1 "Prime" \
                     2 "Cyprus" \
                     3 "Paxos" \
@@ -429,62 +375,64 @@ while true; do
                     11 "Hydra-0" \
                     12 "Hydra-1" \
                     13 "Hydra-2" 3>&1 1>&2 2>&3 3>&- )
-                case $LOCATION in
-                1)
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Prime mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^PRIME_COINBASE *=.*/PRIME_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Prime address updated." 0 0
+            dialog --nocancel --pause "This will show the last 40 lines of your nodelogs. Press OK to continue." 10 40 2
+            case $LOCATION in
+                1) 
+                    FILE="quainetwork/go-quai/nodelogs/prime.log"
                     ;;
                 2)
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Cyprus mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^REGION_1_COINBASE *=.*/REGION_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus address updated." 0 0
+                    FILE="quainetwork/go-quai/nodelogs/region-1.log"
                     ;;
                 3)
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Paxos mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^REGION_2_COINBASE *=.*/REGION_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos address updated." 0 0
+                    FILE="quainetwork/go-quai/nodelogs/region-2.log"
                     ;;
                 4)
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Hydra mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^REGION_3_COINBASE *=.*/REGION_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra address updated." 0 0                
+                    FILE="quainetwork/go-quai/nodelogs/region-3.log"
                     ;;
                 5)
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Cyprus-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_1_1_COINBASE *=.*/ZONE_1_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-1 address updated." 0 0               
+                    FILE="quainetwork/go-quai/nodelogs/zone-1-1.log"
                     ;;
                 6)
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Cyprus-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_1_2_COINBASE *=.*/ZONE_1_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-2 address updated." 0 0            
+                    FILE="quainetwork/go-quai/nodelogs/zone-1-2.log"
                     ;;
                 7)
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Cyprus-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_1_3_COINBASE *=.*/ZONE_1_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-3 address updated." 0 0               
+                    FILE="quainetwork/go-quai/nodelogs/zone-1-3.log"
                     ;;
                 8)
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Paxos-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_2_1_COINBASE *=.*/ZONE_2_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-1 address updated." 0 0            
+                    FILE="quainetwork/go-quai/nodelogs/zone-2-1.log"
                     ;;
-                9)  
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Paxos-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_2_2_COINBASE *=.*/ZONE_2_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-2 address updated." 0 0               
+                9)
+                    FILE="quainetwork/go-quai/nodelogs/zone-2-2.log"
                     ;;
                 10)
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Paxos-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_2_3_COINBASE *=.*/ZONE_2_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-3 address updated." 0 0                
+                    FILE="quainetwork/go-quai/nodelogs/zone-2-3.log"
                     ;;
                 11)
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Hydra-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_3_1_COINBASE *=.*/ZONE_3_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-1 address updated." 0 0               
+                    FILE="quainetwork/go-quai/nodelogs/zone-3-1.log"
                     ;;
                 12)
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Hydra-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_3_2_COINBASE *=.*/ZONE_3_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-2 address updated." 0 0                
+                    FILE="quainetwork/go-quai/nodelogs/zone-3-2.log"
                     ;;
                 13)
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Hydra-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_3_3_COINBASE *=.*/ZONE_3_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-3 address updated." 0 0           
+                    FILE="quainetwork/go-quai/nodelogs/zone-3-3.log"
                     ;;
-                esac
-            rm -rf network.env.save
+            esac
+            result=`tail -40 $FILE`
+            dialog --cr-wrap --title "$FILE" --msgbox "\n$result" 0 0
         fi
-        ;;
+      ;;
+    7 )
+        if ! $MININGLOGS; then
+            dialog --title "Alert" \
+            --no-collapse \
+            --msgbox "\nPlease start your manager before viewing manager logs." 0 0
+        else
+            # Print Miner Logs
+            cd
+            dialog --nocancel --pause "This will show the last 40 lines of your miner logs. Press OK to continue." 10 40 2
+            result=`tail -40 quainetwork/quai-manager/logs/quai-manager.log`
+            dialog --cr-wrap --title "quainetwork/quai-manager/logs/quai-manager.log" --msgbox "\n$result" 30 90
+        fi
+      ;;
   esac
 done
