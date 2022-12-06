@@ -22,17 +22,9 @@ This repository is a work in progress and is made purely to simplify the interac
   - `sudo yum install dialog` (CentOS)
   - `brew install dialog` (MacOS)
 
-## Getting Started
-
-This script comes with base styling. If you would like to use the styling found in this readme, you must configure it with the `.dialogrc` file. To do this, open up a terminal window and navigate to the directory where you cloned the repo and run the following command:
-
-```
-cp .dialogrc ~/.dialogrc
-```
-
 ## Executing Program
 
-To run the base script, run the following command:
+To run the base script, open up a terminal window and navigate to the directory where you cloned the repo and run the following command:
 
 ```
 sh quai.sh
@@ -42,7 +34,7 @@ The base script interface will look like this:
 
 ![quai.sh](./Screenshots/quaish.png)
 
-To run the advanced script, run the following command:
+To run the advanced script, in the same directory, run the following command:
 
 ```
 sh quai-admin.sh
