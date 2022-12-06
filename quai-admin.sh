@@ -43,7 +43,7 @@ while true; do
     --backtitle "Quai Hardware Manager" \
     --clear \
     --cancel-label "EXIT" \
-    --menu "Select an Option:" 18 50 10 \
+    --menu "Select an Option:" 17 50 10 \
     "1" "$INSTALL_DISPLAY" \
     "2" "Update" \
     "3" "$STARTFULLNODE" \
