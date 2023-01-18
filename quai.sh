@@ -215,7 +215,7 @@ while true; do
             --msgbox  "\nFull-Node is already running." 0 0
         else
             # Start go-quai
-            cd $HOME/quainetwork/go-quai && make run-full-mining
+            cd $HOME/quainetwork/go-quai && make run-all
             ISRUNNING="True"
             NODELOGS="True"
             
@@ -233,54 +233,54 @@ while true; do
                             2 "Cyprus" \
                             3 "Paxos" \
                             4 "Hydra" \
-                            5 "Cyprus-0" \
-                            6 "Cyprus-1" \
-                            7 "Cyprus-2" \
-                            8 "Paxos-0" \
-                            9 "Paxos-1" \
-                            10 "Paxos-2" \
-                            11 "Hydra-0" \
-                            12 "Hydra-1" \
-                            13 "Hydra-2" 3>&1 1>&2 2>&3 3>&- )
+                            5 "Cyprus-1" \
+                            6 "Cyprus-2" \
+                            7 "Cyprus-3" \
+                            8 "Paxos-1" \
+                            9 "Paxos-2" \
+                            10 "Paxos-3" \
+                            11 "Hydra-1" \
+                            12 "Hydra-2" \
+                            13 "Hydra-3" 3>&1 1>&2 2>&3 3>&- )
                     case $LOCATION in
                         1) 
                             FILE="quainetwork/go-quai/nodelogs/prime.log"
                             ;;
                         2)
-                            FILE="quainetwork/go-quai/nodelogs/region-1.log"
+                            FILE="quainetwork/go-quai/nodelogs/region-0.log"
                             ;;
                         3)
-                            FILE="quainetwork/go-quai/nodelogs/region-2.log"
+                            FILE="quainetwork/go-quai/nodelogs/region-1.log"
                             ;;
                         4)
-                            FILE="quainetwork/go-quai/nodelogs/region-3.log"
+                            FILE="quainetwork/go-quai/nodelogs/region-2.log"
                             ;;
                         5)
-                            FILE="quainetwork/go-quai/nodelogs/zone-1-1.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-0-0.log"
                             ;;
                         6)
-                            FILE="quainetwork/go-quai/nodelogs/zone-1-2.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-0-1.log"
                             ;;
                         7)
-                            FILE="quainetwork/go-quai/nodelogs/zone-1-3.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-0-2.log"
                             ;;
                         8)
-                            FILE="quainetwork/go-quai/nodelogs/zone-2-1.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-1-0.log"
                             ;;
                         9)
-                            FILE="quainetwork/go-quai/nodelogs/zone-2-2.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-1-1.log"
                             ;;
                         10)
-                            FILE="quainetwork/go-quai/nodelogs/zone-2-3.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-1-2.log"
                             ;;
                         11)
-                            FILE="quainetwork/go-quai/nodelogs/zone-3-1.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-2-0.log"
                             ;;
                         12)
-                            FILE="quainetwork/go-quai/nodelogs/zone-3-2.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-2-1.log"
                             ;;
                         13)
-                            FILE="quainetwork/go-quai/nodelogs/zone-3-3.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-2-2.log"
                             ;;
                     esac
                     result=`tail -40 $FILE`
@@ -312,7 +312,7 @@ while true; do
                 3 "Zone-2" 3>&1 1>&2 2>&3 3>&- )
 
             # Start go-quai
-            cd $HOME/quainetwork/quai-manager && make run-background region=$REGION zone=$ZONE
+            cd $HOME/quainetwork/quai-manager && make run-mine-background region=$REGION-1 zone=$ZONE-1
             ISMINING="True"
             ISRUNNING="False"
             NODELOGS="True"
@@ -375,55 +375,55 @@ while true; do
                     2 "Cyprus" \
                     3 "Paxos" \
                     4 "Hydra" \
-                    5 "Cyprus-0" \
-                    6 "Cyprus-1" \
-                    7 "Cyprus-2" \
-                    8 "Paxos-0" \
-                    9 "Paxos-1" \
-                    10 "Paxos-2" \
-                    11 "Hydra-0" \
-                    12 "Hydra-1" \
-                    13 "Hydra-2" 3>&1 1>&2 2>&3 3>&- )
+                    5 "Cyprus-1" \
+                    6 "Cyprus-2" \
+                    7 "Cyprus-3" \
+                    8 "Paxos-1" \
+                    9 "Paxos-2" \
+                    10 "Paxos-3" \
+                    11 "Hydra-1" \
+                    12 "Hydra-2" \
+                    13 "Hydra-3" 3>&1 1>&2 2>&3 3>&- )
             dialog --nocancel --pause "This will show the last 40 lines of your nodelogs. Press OK to continue." 10 40 2
             case $LOCATION in
                 1) 
                     FILE="quainetwork/go-quai/nodelogs/prime.log"
                     ;;
                 2)
-                    FILE="quainetwork/go-quai/nodelogs/region-1.log"
+                    FILE="quainetwork/go-quai/nodelogs/region-0.log"
                     ;;
                 3)
-                    FILE="quainetwork/go-quai/nodelogs/region-2.log"
+                    FILE="quainetwork/go-quai/nodelogs/region-1.log"
                     ;;
                 4)
-                    FILE="quainetwork/go-quai/nodelogs/region-3.log"
+                    FILE="quainetwork/go-quai/nodelogs/region-2.log"
                     ;;
                 5)
-                    FILE="quainetwork/go-quai/nodelogs/zone-1-1.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-0-0.log"
                     ;;
                 6)
-                    FILE="quainetwork/go-quai/nodelogs/zone-1-2.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-0-1.log"
                     ;;
                 7)
-                    FILE="quainetwork/go-quai/nodelogs/zone-1-3.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-0-2.log"
                     ;;
                 8)
-                    FILE="quainetwork/go-quai/nodelogs/zone-2-1.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-1-0.log"
                     ;;
                 9)
-                    FILE="quainetwork/go-quai/nodelogs/zone-2-2.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-1-1.log"
                     ;;
                 10)
-                    FILE="quainetwork/go-quai/nodelogs/zone-2-3.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-1-2.log"
                     ;;
                 11)
-                    FILE="quainetwork/go-quai/nodelogs/zone-3-1.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-2-0.log"
                     ;;
                 12)
-                    FILE="quainetwork/go-quai/nodelogs/zone-3-2.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-2-1.log"
                     ;;
                 13)
-                    FILE="quainetwork/go-quai/nodelogs/zone-3-3.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-2-2.log"
                     ;;
             esac
             result=`tail -40 $FILE`
