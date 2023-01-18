@@ -217,7 +217,7 @@ while true; do
             --msgbox  "\nFull-Node is already running." 0 0
         else
             # Start go-quai
-            cd $HOME/quainetwork/go-quai && make run-full-mining
+            cd $HOME/quainetwork/go-quai && make run-all
             ISRUNNING="True"
             NODELOGS="True"
             
@@ -235,54 +235,54 @@ while true; do
                             2 "Cyprus" \
                             3 "Paxos" \
                             4 "Hydra" \
-                            5 "Cyprus-0" \
-                            6 "Cyprus-1" \
-                            7 "Cyprus-2" \
-                            8 "Paxos-0" \
-                            9 "Paxos-1" \
-                            10 "Paxos-2" \
-                            11 "Hydra-0" \
-                            12 "Hydra-1" \
-                            13 "Hydra-2" 3>&1 1>&2 2>&3 3>&- )
+                            5 "Cyprus-1" \
+                            6 "Cyprus-2" \
+                            7 "Cyprus-3" \
+                            8 "Paxos-1" \
+                            9 "Paxos-2" \
+                            10 "Paxos-3" \
+                            11 "Hydra-1" \
+                            12 "Hydra-2" \
+                            13 "Hydra-3" 3>&1 1>&2 2>&3 3>&- )
                     case $LOCATION in
                         1) 
                             FILE="quainetwork/go-quai/nodelogs/prime.log"
                             ;;
                         2)
-                            FILE="quainetwork/go-quai/nodelogs/region-1.log"
+                            FILE="quainetwork/go-quai/nodelogs/region-0.log"
                             ;;
                         3)
-                            FILE="quainetwork/go-quai/nodelogs/region-2.log"
+                            FILE="quainetwork/go-quai/nodelogs/region-1.log"
                             ;;
                         4)
-                            FILE="quainetwork/go-quai/nodelogs/region-3.log"
+                            FILE="quainetwork/go-quai/nodelogs/region-2.log"
                             ;;
                         5)
-                            FILE="quainetwork/go-quai/nodelogs/zone-1-1.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-0-0.log"
                             ;;
                         6)
-                            FILE="quainetwork/go-quai/nodelogs/zone-1-2.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-0-1.log"
                             ;;
                         7)
-                            FILE="quainetwork/go-quai/nodelogs/zone-1-3.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-0-2.log"
                             ;;
                         8)
-                            FILE="quainetwork/go-quai/nodelogs/zone-2-1.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-1-0.log"
                             ;;
                         9)
-                            FILE="quainetwork/go-quai/nodelogs/zone-2-2.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-1-1.log"
                             ;;
                         10)
-                            FILE="quainetwork/go-quai/nodelogs/zone-2-3.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-1-2.log"
                             ;;
                         11)
-                            FILE="quainetwork/go-quai/nodelogs/zone-3-1.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-2-0.log"
                             ;;
                         12)
-                            FILE="quainetwork/go-quai/nodelogs/zone-3-2.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-2-1.log"
                             ;;
                         13)
-                            FILE="quainetwork/go-quai/nodelogs/zone-3-3.log"
+                            FILE="quainetwork/go-quai/nodelogs/zone-2-2.log"
                             ;;
                     esac
                     result=`tail -40 $FILE`
@@ -304,17 +304,19 @@ while true; do
             --no-collapse \
             --msgbox  "\nPlease start your Full-Node before starting the Manager." 0 0
         else
-            REGION=$(dialog --nocancel --menu "Which regiond would you like to mine?" 0 0 3 \
+            REGION=$(dialog --nocancel --menu "Which region would you like to mine?" 0 0 3 \
                 1 "Cyprus" \
                 2 "Paxos" \
                 3 "Hydra" 3>&1 1>&2 2>&3 3>&- )
             ZONE=$(dialog --nocancel --menu "Which region would you like to mine?" 0 0 3 \
-                1 "Zone-0" \
-                2 "Zone-1" \
-                3 "Zone-2" 3>&1 1>&2 2>&3 3>&- )
+                1 "Zone-1" \
+                2 "Zone-2" \
+                3 "Zone-3" 3>&1 1>&2 2>&3 3>&- )
 
             # Start go-quai
-            cd $HOME/quainetwork/quai-manager && make run-background region=$REGION zone=$ZONE
+            REGION=$REGION-1
+            ZONE=$ZONE-1
+            cd $HOME/quainetwork/quai-manager && make run-mine-background region=$REGION zone=$ZONE
             ISMINING="True"
             ISRUNNING="False"
             NODELOGS="True"
@@ -377,55 +379,55 @@ while true; do
                     2 "Cyprus" \
                     3 "Paxos" \
                     4 "Hydra" \
-                    5 "Cyprus-0" \
-                    6 "Cyprus-1" \
-                    7 "Cyprus-2" \
-                    8 "Paxos-0" \
-                    9 "Paxos-1" \
-                    10 "Paxos-2" \
-                    11 "Hydra-0" \
-                    12 "Hydra-1" \
-                    13 "Hydra-2" 3>&1 1>&2 2>&3 3>&- )
+                    5 "Cyprus-1" \
+                    6 "Cyprus-2" \
+                    7 "Cyprus-3" \
+                    8 "Paxos-1" \
+                    9 "Paxos-2" \
+                    10 "Paxos-3" \
+                    11 "Hydra-1" \
+                    12 "Hydra-2" \
+                    13 "Hydra-3" 3>&1 1>&2 2>&3 3>&- )
             dialog --nocancel --pause "This will show the last 40 lines of your nodelogs. Press OK to continue." 10 40 2
             case $LOCATION in
                 1) 
                     FILE="quainetwork/go-quai/nodelogs/prime.log"
                     ;;
                 2)
-                    FILE="quainetwork/go-quai/nodelogs/region-1.log"
+                    FILE="quainetwork/go-quai/nodelogs/region-0.log"
                     ;;
                 3)
-                    FILE="quainetwork/go-quai/nodelogs/region-2.log"
+                    FILE="quainetwork/go-quai/nodelogs/region-1.log"
                     ;;
                 4)
-                    FILE="quainetwork/go-quai/nodelogs/region-3.log"
+                    FILE="quainetwork/go-quai/nodelogs/region-2.log"
                     ;;
                 5)
-                    FILE="quainetwork/go-quai/nodelogs/zone-1-1.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-0-0.log"
                     ;;
                 6)
-                    FILE="quainetwork/go-quai/nodelogs/zone-1-2.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-0-1.log"
                     ;;
                 7)
-                    FILE="quainetwork/go-quai/nodelogs/zone-1-3.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-0-2.log"
                     ;;
                 8)
-                    FILE="quainetwork/go-quai/nodelogs/zone-2-1.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-1-0.log"
                     ;;
                 9)
-                    FILE="quainetwork/go-quai/nodelogs/zone-2-2.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-1-1.log"
                     ;;
                 10)
-                    FILE="quainetwork/go-quai/nodelogs/zone-2-3.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-1-2.log"
                     ;;
                 11)
-                    FILE="quainetwork/go-quai/nodelogs/zone-3-1.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-2-0.log"
                     ;;
                 12)
-                    FILE="quainetwork/go-quai/nodelogs/zone-3-2.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-2-1.log"
                     ;;
                 13)
-                    FILE="quainetwork/go-quai/nodelogs/zone-3-3.log"
+                    FILE="quainetwork/go-quai/nodelogs/zone-2-2.log"
                     ;;
             esac
             result=`tail -40 $FILE`
@@ -462,15 +464,15 @@ while true; do
                     2 "Cyprus" \
                     3 "Paxos" \
                     4 "Hydra" \
-                    5 "Cyprus-0" \
-                    6 "Cyprus-1" \
-                    7 "Cyprus-2" \
-                    8 "Paxos-0" \
-                    9 "Paxos-1" \
-                    10 "Paxos-2" \
-                    11 "Hydra-0" \
-                    12 "Hydra-1" \
-                    13 "Hydra-2" 3>&1 1>&2 2>&3 3>&- )
+                    5 "Cyprus-1" \
+                    6 "Cyprus-2" \
+                    7 "Cyprus-3" \
+                    8 "Paxos-1" \
+                    9 "Paxos-2" \
+                    10 "Paxos-3" \
+                    11 "Hydra-1" \
+                    12 "Hydra-2" \
+                    13 "Hydra-3" 3>&1 1>&2 2>&3 3>&- )
                 case $LOCATION in
                 1)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Prime mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
@@ -478,51 +480,51 @@ while true; do
                     ;;
                 2)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Cyprus mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^REGION_1_COINBASE *=.*/REGION_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus address updated." 0 0
+                    sed -i.save "s/^REGION_0_COINBASE *=.*/REGION_0_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus address updated." 0 0
                     ;;
                 3)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Paxos mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^REGION_2_COINBASE *=.*/REGION_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos address updated." 0 0
+                    sed -i.save "s/^REGION_1_COINBASE *=.*/REGION_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos address updated." 0 0
                     ;;
                 4)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Hydra mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^REGION_3_COINBASE *=.*/REGION_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra address updated." 0 0                
+                    sed -i.save "s/^REGION_2_COINBASE *=.*/REGION_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra address updated." 0 0                
                     ;;
                 5)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Cyprus-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_1_1_COINBASE *=.*/ZONE_1_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-1 address updated." 0 0               
+                    sed -i.save "s/^ZONE_0_0_COINBASE *=.*/ZONE_0_0_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-1 address updated." 0 0               
                     ;;
                 6)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Cyprus-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_1_2_COINBASE *=.*/ZONE_1_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-2 address updated." 0 0            
+                    sed -i.save "s/^ZONE_0_1_COINBASE *=.*/ZONE_0_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-2 address updated." 0 0            
                     ;;
                 7)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Cyprus-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_1_3_COINBASE *=.*/ZONE_1_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-3 address updated." 0 0               
+                    sed -i.save "s/^ZONE_0_2_COINBASE *=.*/ZONE_0_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-3 address updated." 0 0               
                     ;;
                 8)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Paxos-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_2_1_COINBASE *=.*/ZONE_2_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-1 address updated." 0 0            
+                    sed -i.save "s/^ZONE_1_0_COINBASE *=.*/ZONE_1_0_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-1 address updated." 0 0            
                     ;;
                 9)  
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Paxos-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_2_2_COINBASE *=.*/ZONE_2_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-2 address updated." 0 0               
+                    sed -i.save "s/^ZONE_1_1_COINBASE *=.*/ZONE_1_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-2 address updated." 0 0               
                     ;;
                 10)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Paxos-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_2_3_COINBASE *=.*/ZONE_2_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-3 address updated." 0 0                
+                    sed -i.save "s/^ZONE_1_2_COINBASE *=.*/ZONE_1_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-3 address updated." 0 0                
                     ;;
                 11)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Hydra-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_3_1_COINBASE *=.*/ZONE_3_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-1 address updated." 0 0               
+                    sed -i.save "s/^ZONE_2_0_COINBASE *=.*/ZONE_2_0_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-1 address updated." 0 0               
                     ;;
                 12)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Hydra-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_3_2_COINBASE *=.*/ZONE_3_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-2 address updated." 0 0                
+                    sed -i.save "s/^ZONE_2_1_COINBASE *=.*/ZONE_2_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-2 address updated." 0 0                
                     ;;
                 13)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Hydra-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ZONE_3_3_COINBASE *=.*/ZONE_3_3_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-3 address updated." 0 0           
+                    sed -i.save "s/^ZONE_2_2_COINBASE *=.*/ZONE_2_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-3 address updated." 0 0           
                     ;;
                 esac
             rm -rf network.env.save
