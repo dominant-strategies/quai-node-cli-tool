@@ -2,10 +2,6 @@
 
 DIALOG_CANCEL=1
 DIALOG_ESC=255
-ISRUNNING="False"
-ISMINING="False"
-NODELOGS="False"
-MININGLOGS="False"
 DIALOGRC=~/.dialogrc
 
 STYLECONFIG=~/.dialogrc
@@ -30,20 +26,34 @@ while true; do
 
     if [ -d "$HOME/quainetwork/go-quai/nodelogs" ]; then
         NODELOGS="True"
+    else
+        NODELOGS="False"
     fi
 
     if [ -d "$HOME/quainetwork/quai-manager/logs" ]; then
         MININGLOGS="True"
+    else
+        MININGLOGS="False"
     fi
 
-    if $ISRUNNING; then
+    node_process_name="go-quai"
+    manager_process_name="quai-manager"
+
+    # Check if full node is running
+    if pgrep -x "$node_process_name" >/dev/null; then
+        ISRUNNING="True"
         STARTFULLNODE="Full Node - Running ✔"
-        STARTMINING="Manager - Stopped x"
-    elif $ISMINING; then
-        STARTFULLNODE="Full Node - Running ✔"
+    else
+        ISRUNNING="False"
+        STARTFULLNODE="Start Full Node"
+    fi
+
+    # Check if manager is running
+    if pgrep -x "$manager_process_name" >/dev/null; then
+        ISMINING="True"
         STARTMINING="Manager - Running ✔"
     else
-        STARTFULLNODE="Start Full Node"
+        ISMINING="False"
         STARTMINING="Start Manager"
     fi
 
@@ -83,8 +93,6 @@ while true; do
           dialog --title "Stop" \
           --no-collapse \
           --infobox "\nStopping Full-Node and/or Manager. Please wait."  0 0
-          ISMINING="False"
-          ISRUNNING="False"
           clear
         echo "Program terminated."
         exit
@@ -109,8 +117,6 @@ while true; do
           dialog --title "Stop" \
           --no-collapse \
           --infobox "\nStopping Full-Node and/or Manager. Please wait."  0 0
-          ISMINING="False"
-          ISRUNNING="False"
           clear
         echo "Program terminated."
         exit
@@ -216,8 +222,6 @@ while true; do
         else
             # Start go-quai
             cd $HOME/quainetwork/go-quai && make run-all
-            ISRUNNING="True"
-            NODELOGS="True"
             
             # Ask the user if they would like to view nodelogs
             dialog --title "Alert" \
@@ -312,11 +316,15 @@ while true; do
                 3 "Zone-2" 3>&1 1>&2 2>&3 3>&- )
 
             # Start go-quai
-            cd $HOME/quainetwork/quai-manager && make run-mine-background region=$REGION-1 zone=$ZONE-1
+            REGION=$(($REGION-1))
+            ZONE=$(($ZONE-1))
+            cd $HOME/quainetwork/quai-manager && make run-mine-background region=$REGION zone=$ZONE
             ISMINING="True"
             ISRUNNING="False"
-            NODELOGS="True"
-            MININGLOGS="True"
+
+            dialog --title "Alert" \
+            --no-collapse \
+            --msgbox  "Manager started in: \nRegion: $REGION \nZone: $ZONE" 0 0
             
             # Ask the user if they would like to view nodelogs
             dialog --title "Alert" \
@@ -354,9 +362,6 @@ while true; do
             dialog --title "Stop" \
             --no-collapse \
             --infobox "\nStopping Full-Node and/or Manager. Please wait."  0 0
-            ISMINING="False"
-            ISRUNNING="False"
-            
             dialog --title "Stop" \
             --no-collapse \
             --msgbox "\nFull-Node and/or Manager stopped. Press OK to return to the menu." 0 0
