@@ -2,11 +2,16 @@
 
 DIALOG_CANCEL=1
 DIALOG_ESC=255
-DIALOGRC=~/.dialogrc
-
 STYLECONFIG=~/.dialogrc
+
 if [ -f "$STYLECONFIG" ]; then
     echo "Styling config found."
+    if cmp --silent "$STYLECONFIG" ".dialogrc"; then
+        echo "Styling config is up to date."
+    else
+        echo "Styling config is out of date."
+        cp .dialogrc ~/.dialogrc
+    fi
 else
     dialog --create-rc $STYLECONFIG
     cp .dialogrc ~/.dialogrc
