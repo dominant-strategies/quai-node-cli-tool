@@ -6,10 +6,17 @@ STYLECONFIG=~/.dialogrc
 
 if [ -f "$STYLECONFIG" ]; then
     echo "Styling config found."
+    if cmp --silent "$STYLECONFIG" ".dialogrc"; then
+        echo "Styling config is up to date."
+    else
+        echo "Styling config is out of date."
+        cp .dialogrc ~/.dialogrc
+    fi
 else
     dialog --create-rc $STYLECONFIG
     cp .dialogrc ~/.dialogrc
 fi
+
 
 while true; do
     arr=("$HOME/quainetwork/go-quai" "$HOME/quainetwork/quai-manager")
