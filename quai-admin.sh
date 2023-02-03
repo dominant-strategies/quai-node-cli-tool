@@ -77,7 +77,7 @@ while true; do
     "6" "Print Node Logs" \
     "7" "Print Miner Logs" \
     "8" "Edit Mining Addresses" \
-    "9" "Edit Config Directly" \
+    "9" "Edit Config Variables" \
     "10" "Clear database and logs" \
     2>&1 1>&3)
   exit_status=$?
@@ -549,15 +549,66 @@ while true; do
             --no-collapse \
             --msgbox  "\nPlease stop your node and manager to edit your config file." 0 0
         else
-            # Edit config file
             cd $HOME/quainetwork/go-quai
-            dialog --title "network.env" --editbox network.env 0 0 2> /tmp/network.env
-            if [ $? -eq 0 ]; then
-                cp /tmp/network.env network.env
-                rm -rf /tmp/network.env
-            fi
-            make go-quai>/dev/null 2>&1
-            dialog --msgbox "network.env updated." 0 0
+            LOCATION=$(dialog --menu "Which config variable would you like to edit?\n \nNote: do not change these values without knowing what they do." 0 0 13 \
+                    1 "ENABLE_HTTP" \
+                    2 "ENABLE_WS" \
+                    3 "ENABLE_UNLOCK" \
+                    4 "ENABLE_ARCHIVE" \
+                    5 "NETWORK" \
+                    6 "HTTP_ADDR" \
+                    7 "WS_ADDR" \
+                    8 "WS_API" \
+                    9 "HTTP_API" \
+                    10 "QUAI_MINING" \
+                    11 "THREADS" 3>&1 1>&2 2>&3 3>&- )
+                case $LOCATION in
+                1)
+                    ENABLE_HTTP=$(dialog --nocancel --inputbox "Input desired value for ENABLE_HTTP (true/false). " 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^ENABLE_HTTP *=.*/ENABLE_HTTP=$ENABLE_HTTP/" network.env | dialog --msgbox "ENABLE_HTTP set to $ENABLE_HTTP" 0 0
+                    ;;
+                2)
+                    ENABLE_WS=$(dialog --nocancel --inputbox "Input desired value for ENABLE_WS (true/false). " 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^ENABLE_WS *=.*/ENABLE_WS=$ENABLE_WS/" network.env | dialog --msgbox "ENABLE_WS set to $ENABLE_WS" 0 0
+                    ;;
+                3)
+                    ENABLE_UNLOCK=$(dialog --nocancel --inputbox "Input desired value for ENABLE_UNLOCK (true/false). " 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^ENABLE_UNLOCK *=.*/ENABLE_UNLOCK=$ENABLE_UNLOCK/" network.env | dialog --msgbox "ENABLE_UNLOCK set to $ENABLE_UNLOCK" 0 0
+                    ;;
+                4)
+                    ENABLE_ARCHIVE=$(dialog --nocancel --inputbox "Input desired value for ENABLE_ARCHIVE (true/false). " 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^ENABLE_ARCHIVE *=.*/ENABLE_ARCHIVE=$ENABLE_ARCHIVE/" network.env | dialog --msgbox "ENABLE_ARCHIVE set to $ENABLE_ARCHIVE" 0 0
+                    ;;
+                5)
+                    NETWORK=$(dialog --nocancel --inputbox "Input desired value for NETWORK. Options include colosseum (testnet), garden (devnet), and local." 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^NETWORK *=.*/NETWORK=$NETWORK/" network.env | dialog --msgbox "NETWORK set to $NETWORK" 0 0
+                    ;;
+                6)
+                    HTTP_ADDR=$(dialog --nocancel --inputbox "Input desired value for HTTP_ADDR. Options include 0.0.0.0 and 127.0.0.1 (localhost)." 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^HTTP_ADDR *=.*/HTTP_ADDR=$HTTP_ADDR/" network.env | dialog --msgbox "HTTP_ADDR set to $HTTP_ADDR" 0 0
+                    ;;
+                7)
+                    WS_ADDR=$(dialog --nocancel --inputbox "Input desired value for WS_ADDR. Options include 0.0.0.0 and 127.0.0.1 (localhost)." 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^WS_ADDR *=.*/WS_ADDR=$WS_ADDR/" network.env | dialog --msgbox "WS_ADDR set to $WS_ADDR" 0 0
+                    ;;
+                8)
+                    WS_API=$(dialog --nocancel --inputbox "Input desired value for WS_API. Options include debug, net, quai, and txpool." 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^WS_API *=.*/WS_API=$WS_API/" network.env | dialog --msgbox "WS_API set to $WS_API" 0 0
+                    ;;
+                9)
+                    HTTP_API=$(dialog --nocancel --inputbox "Input desired value for HTTP_API. Options include debug, net, quai, and txpool." 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^HTTP_API *=.*/HTTP_API=$HTTP_API/" network.env | dialog --msgbox "HTTP_API set to $HTTP_API" 0 0
+                    ;;
+                10)
+                    QUAI_MINING=$(dialog --nocancel --inputbox "Input desired value for QUAI_MINING (true/false). " 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^QUAI_MINING *=.*/QUAI_MINING=$QUAI_MINING/" network.env | dialog --msgbox "QUAI_MINING set to $QUAI_MINING" 0 0
+                    ;;
+                11) 
+                    THREADS=$(dialog --nocancel --inputbox "Input desired value for THREADS. Set this lower than the number of threads your machine has for best performance." 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^THREADS *=.*/THREADS=$THREADS/" network.env | dialog --msgbox "THREADS set to $THREADS" 0 0
+                    ;;
+                esac
+                rm -rf network.env.save
         fi
     ;;
     10)
