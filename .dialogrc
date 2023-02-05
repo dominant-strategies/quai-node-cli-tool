@@ -23,9 +23,6 @@ tab_len = 0
 # Make tab-traversal for checklist, etc., include the list.
 visit_items = OFF
 
-# Show scrollbar in dialog boxes?
-use_scrollbar = ON
-
 # Shadow dialog boxes? This also turns on color.
 use_shadow = ON
 

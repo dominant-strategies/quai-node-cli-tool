@@ -22,7 +22,7 @@ while true; do
     for i in "${arr[@]}"; do
         if [ -d "$i" ]; then
             INSTALLED="True"
-            INSTALL_DISPLAY="Installed ✔"
+            INSTALL_DISPLAY="-- Installed --"
         else
             INSTALLED=Install
             INSTALL_DISPLAY="Install"
@@ -47,7 +47,7 @@ while true; do
     # Check if full node is running
     if pgrep -x "$node_process_name" >/dev/null; then
         ISRUNNING="True"
-        STARTFULLNODE="Full Node - Running ✔"
+        STARTFULLNODE="Full Node - Running"
     else
         ISRUNNING="False"
         STARTFULLNODE="Start Full Node"
@@ -56,7 +56,7 @@ while true; do
     # Check if manager is running
     if pgrep -x "$manager_process_name" >/dev/null; then
         ISMINING="True"
-        STARTMINING="Manager - Running ✔"
+        STARTMINING="Manager - Running"
     else
         ISMINING="False"
         STARTMINING="Start Manager"
@@ -89,12 +89,10 @@ while true; do
           1) EXIT="False";;
           255) EXIT="False";;
       esac
-      if $EXIT; then
+      if [ $EXIT = "True" ]; then
           #If user chooses stop, kill full node
-          cd $HOME/quainetwork/quai-manager
-          make stop>/dev/null 2>&1
-          cd $HOME/quainetwork/go-quai
-          make stop>/dev/null 2>&1 | \
+          pkill -f quai-manager
+          pkill -f go-quai | \
           dialog --title "Stop" \
           --no-collapse \
           --infobox "\nStopping Full-Node and/or Manager. Please wait."  0 0
@@ -113,11 +111,10 @@ while true; do
           1) EXIT="False";;
           255) EXIT="False";;
       esac
-      if $EXIT; then
+      if [ $EXIT = "True" ]; then
           #If user chooses stop, kill full node
-          cd $HOME/quainetwork/quai-manager
-          make stop>/dev/null 2>&1
-          cd $HOME/quainetwork/go-quai
+          pkill -f quai-manager
+          pkill -f go-quai | \
           make stop>/dev/null 2>&1 | \
           dialog --title "Stop" \
           --no-collapse \
@@ -131,7 +128,7 @@ while true; do
   case $selection in
     1 )
       #If installed, redirect back to menu
-      if $INSTALLED; then
+      if [ $INSTALLED = "True" ]; then
         dialog --title "Alert" \
         --no-collapse \
         --msgbox  "\ngo-quai and quai-manager have already been installed." 0 0
@@ -220,7 +217,7 @@ while true; do
       ;;
     3 )
         #If node is running, redirect back to menu
-        if $ISRUNNING; then
+        if [ $ISRUNNING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
             --msgbox  "\nFull-Node is already running." 0 0
@@ -302,11 +299,11 @@ while true; do
       ;;
     4 )
         #If manager is running, redirect back to menu
-        if $ISMINING; then
+        if [ $ISMINING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
             --msgbox  "\nManager is already running." 0 0
-        elif ! $ISRUNNING; then
+        elif [ $ISRUNNING = "False" ]; then
             dialog --title "Alert" \
             --no-collapse \
             --msgbox  "\nPlease start your Full-Node before starting the Manager." 0 0
@@ -324,8 +321,6 @@ while true; do
             REGION=$(($REGION-1))
             ZONE=$(($ZONE-1))
             cd $HOME/quainetwork/quai-manager && make run-mine-background region=$REGION zone=$ZONE
-            ISMINING="True"
-            ISRUNNING="False"
 
             dialog --title "Alert" \
             --no-collapse \
@@ -358,28 +353,28 @@ while true; do
             1) STOP="False";;
             255) STOP="False";;
         esac
-        if $STOP; then
+        if [ $STOP = "True" ]; then
             #If user chooses stop, kill full node
             cd $HOME/quainetwork/quai-manager
-            make stop>/dev/null 2>&1
+            make stop
             cd $HOME/quainetwork/go-quai
-            make stop>/dev/null 2>&1 | \
+            make stop | \
             dialog --title "Stop" \
             --no-collapse \
             --infobox "\nStopping Full-Node and/or Manager. Please wait."  0 0
             dialog --title "Stop" \
-            --no-collapse \
-            --msgbox "\nFull-Node and/or Manager stopped. Press OK to return to the menu." 0 0
-        fi
+            --no-cancel \
+            --pause "\nFull-Node and/or Manager stopped. Press OK to return to the menu." 10 40 2
+         fi
       ;;
     6 )
-        if ! $NODELOGS; then
+        if [ $NODELOGS = "False" ]; then
             dialog --title "Alert" \
             --no-collapse \
             --msgbox "\nPlease start your full-node before viewing nodelogs." 0 0
         else
             #Print nodelogs
-            cd
+            cd $HOME
             LOCATION=$(dialog --nocancel --menu "In which location would you like to view nodelogs?" 0 0 13 \
                     1 "Prime" \
                     2 "Cyprus" \
@@ -441,7 +436,7 @@ while true; do
         fi
       ;;
     7 )
-        if ! $MININGLOGS; then
+        if [ $MININGLOGS = "False"]; then
             dialog --title "Alert" \
             --no-collapse \
             --msgbox "\nPlease start your manager before viewing manager logs." 0 0
