@@ -3,6 +3,9 @@
 DIALOG_CANCEL=1
 DIALOG_ESC=255
 STYLECONFIG=~/.dialogrc
+MAIN_DIR="quainetwork"
+NODE_PROCESS="go-quai"
+MANAGER_PROCESS="quai-manager"
 
 if [ -f "$STYLECONFIG" ]; then
     echo "Styling config found."
@@ -17,19 +20,119 @@ else
     cp .dialogrc ~/.dialogrc
 fi
 
+if command -v go 2>/dev/null; then
+    :
+else
+    dialog --title "Installation" --msgbox "\nGolang is not installed. \nPlease install to run this script." 0 0
+    echo "Golang can be installed at https://go.dev/doc/install"
+    exit
+fi
+
+if command -v git 2>/dev/null; then
+    :
+else
+    dialog --title "Installation" --msgbox "\nGit is not installed. \nPlease install to run this script." 0 0
+    echo "Git can be installed at https://github.com/git-guides/install-git"
+    exit
+fi
+
+# Check installation status, if not found, prompt the user to install.
+if [[ -d "$HOME/$MAIN_DIR/go-quai" && -d "$HOME/$MAIN_DIR/quai-manager" ]]; then
+    :
+else
+    # Check if user has configured wallet addresses
+    dialog --title "Installation" --yesno "\nHave you configured 13 Quai addresses? \nYou'll need them to run a node and mine." 0 0
+    response=$?
+    case $response in
+        0)  : ;;
+        1)
+            # Inform user to configure addresses
+            dialog --title "Installation" --msgbox "\nPlease configure your wallet addresses before continuing." 0 0
+            echo "You can set up addresses here: https://docs.quai.network/use-quai/wallets/quaisnap"
+            exit
+            ;;
+        255)
+            exit
+            ;;
+    esac
+
+    # Check if user wants to install
+    dialog --title "Installation" --yesno "\nThis will install go-quai and quai-manager in the home directory.\n \nContinue?" 0 0
+    response=$?
+    case $response in
+        0) 
+            # Create directory
+            cd $HOME
+            mkdir $MAIN_DIR
+            # Clone into go-quai
+            cd $MAIN_DIR
+            git clone https://github.com/dominant-strategies/go-quai>/dev/null 2>&1 | \
+            dialog --title "Installation" \
+            --no-collapse \
+            --infobox "\nInstalling Node. Please wait."  7 28
+            
+            #Inform user node is installed
+            dialog --title "Installation" \
+            --no-collapse \
+            --msgbox "\nNode installed.\n \nPress OK to continue." 7 28
+
+            #Configure go-quai
+            cd $HOME/$MAIN_DIR/go-quai
+            cp network.env.dist network.env
+            make go-quai>/dev/null 2>&1 | 
+            dialog --title "Installation" \
+            --no-collapse \
+            --infobox "\nGenerating binaries.\n \nPlease wait. " 7 28
+
+            # Ask user to input wallet addresses and replace them in the network.env file
+            dialog --title "Installation" \
+            --no-collapse \
+            --msgbox "\nPlease enter your 13 Quai addresses.\n \nPress OK to continue." 0 0
+            
+            ## Placeholder for new copy paste network.env thing
+            dialog --title "Installation" \
+            --no-collapse \
+            --msgbox "\nPLACEHOLDER" 0 0
+
+            #Inform user node is configured
+            dialog --title "Installation" \
+            --no-collapse \
+            --msgbox "\nNode and mining addresses configured.\n \nPress OK to continue." 0 0
+
+            # Clone into quai-manager
+            cd $HOME/$MAIN_DIR
+            git clone https://github.com/dominant-strategies/quai-manager>/dev/null 2>&1 | \
+            dialog --title "Installation" \
+            --no-collapse \
+            --infobox "\nInstalling Manager.\n \nPlease wait."  7 28
+            
+            #Inform user manager is installed
+            dialog --title "Installation" \
+            --no-collapse \
+            --msgbox "\nManager installed.\n \nPress OK to continue." 7 28
+
+            #Configure quai-manager
+            cd $HOME/$MAIN_DIR/quai-manager
+            make quai-manager>/dev/null 2>&1 | \
+            dialog --title "Installation" 
+            --no-collapse \
+            --infobox "\nGenerating binaries.\n \nPlease wait. " 7 28
+
+            #Inform user manager is configured
+            dialog --title "Installation" \
+            --no-collapse \
+            --msgbox "\nManager configured.\n \nInstallation complete." 0 0
+            ;;
+        1) 
+            echo "Installation cancelled."
+            exit ;;
+        255) 
+            echo "Installation cancelled."
+            exit ;;
+    esac
+fi
 
 while true; do
-    arr=("$HOME/quainetwork/go-quai" "$HOME/quainetwork/quai-manager")
-    for i in "${arr[@]}"; do
-        if [ -d "$i" ]; then
-            INSTALLED="True"
-            INSTALL_DISPLAY="Installed ✔"
-        else
-            INSTALLED=Install
-            INSTALL_DISPLAY="Install"
-        fi
-    done
-
     if [ -d "$HOME/quainetwork/go-quai/nodelogs" ]; then
         NODELOGS="True"
     else
@@ -42,50 +145,47 @@ while true; do
         MININGLOGS="False"
     fi
 
-    node_process_name="go-quai"
-    manager_process_name="quai-manager"
-
-    # Check if full node is running
-    if pgrep -x "$node_process_name" >/dev/null; then
+    # Check if node is running
+    if pgrep -x "$NODE_PROCESS">/dev/null 2>&1; then
         ISRUNNING="True"
-        STARTFULLNODE="Full Node - Running ✔"
+        STARTFULLNODE="Node - \Z2Running\Zn"
     else
         ISRUNNING="False"
-        STARTFULLNODE="Start Full Node"
+        STARTFULLNODE="Start Node - \Z1Stopped\Zn"
     fi
 
     # Check if manager is running
-    if pgrep -x "$manager_process_name" >/dev/null; then
+    if pgrep -x "$MANAGER_PROCESS">/dev/null 2>&1; then
         ISMINING="True"
-        STARTMINING="Manager - Running ✔"
+        STARTMINING="Manager - \Z2Running\Zn"
     else
         ISMINING="False"
-        STARTMINING="Start Manager"
+        STARTMINING="Start Manager - \Z1Stopped\Zn"
     fi
 
   exec 3>&1
   selection=$(dialog \
     --backtitle "Quai Hardware Manager" \
     --clear \
+    --colors \
     --cancel-label "EXIT" \
     --menu "Select an Option:" 17 50 10 \
-    "1" "$INSTALL_DISPLAY" \
-    "2" "Update" \
-    "3" "$STARTFULLNODE" \
-    "4" "$STARTMINING" \
-    "5" "Stop" \
-    "6" "Print Node Logs" \
-    "7" "Print Miner Logs" \
-    "8" "Edit Mining Addresses" \
-    "9" "Edit Config Variables" \
-    "10" "Clear database and logs" \
+    "1" "$STARTFULLNODE" \
+    "2" "$STARTMINING" \
+    "3" "Stop" \
+    "4" "Update" \
+    "5" "Node Logs" \
+    "6" "Miner Logs" \
+    "7" "Edit Mining Addresses" \
+    "8" "Edit Config Variables" \
+    "9" "Clear logs & db" \
     2>&1 1>&3)
   exit_status=$?
   exec 3>&-
   case $exit_status in
     $DIALOG_CANCEL)
       # Verify the user wants to stop their node and manager
-      dialog --title "Alert" --yesno "\nExit the program? This will stop your node and miner." 0 0
+      dialog --title "Alert" --colors --yesno "\nExit the program?\n \n\Z1This will stop your node and miner.\Zn" 0 0
       response=$?
       EXIT="False"
       case $response in
@@ -94,14 +194,14 @@ while true; do
           255) EXIT="False";;
       esac
       if $EXIT; then
-          #If user chooses stop, kill full node
+          #If user chooses stop, kill node
           cd $HOME/quainetwork/quai-manager
           make stop>/dev/null 2>&1
           cd $HOME/quainetwork/go-quai
           make stop>/dev/null 2>&1 | \
           dialog --title "Stop" \
           --no-collapse \
-          --infobox "\nStopping Full-Node and/or Manager. Please wait."  0 0
+          --infobox "\nStopping Node and/or Manager.\n \nPlease wait."  0 0
           clear
         echo "Program terminated."
         exit
@@ -109,7 +209,7 @@ while true; do
       ;;
     $DIALOG_ESC)
       # Verify the user wants to stop their node and manager
-      dialog --yesno "\nExit the program? This will stop your node and miner." 0 0
+      dialog --yesno "\nExit the program?\n \n\Z1This will stop your node and miner.\Zn" 0 0
       response=$?
       EXIT="False"
       case $response in
@@ -118,14 +218,14 @@ while true; do
           255) EXIT="False";;
       esac
       if $EXIT; then
-          #If user chooses stop, kill full node
+          #If user chooses stop, kill node
           cd $HOME/quainetwork/quai-manager
           make stop>/dev/null 2>&1
           cd $HOME/quainetwork/go-quai
           make stop>/dev/null 2>&1 | \
           dialog --title "Stop" \
           --no-collapse \
-          --infobox "\nStopping Full-Node and/or Manager. Please wait."  0 0
+          --infobox "\nStopping Node and/or Manager.\n \nPlease wait."  0 0
           clear
         echo "Program terminated."
         exit
@@ -134,108 +234,22 @@ while true; do
   esac
   case $selection in
     1 )
-      #If installed, redirect back to menu
-      if $INSTALLED; then
-        dialog --title "Alert" \
-        --no-collapse \
-        --msgbox  "\ngo-quai and quai-manager have already been installed." 0 0
-      else
-        # Move to home directory
-        cd
-        MAIN_DIR="quainetwork"
-        mkdir $MAIN_DIR
-
-        dialog --yesno "\nThis will install go-quai and quai-manager in the HOME directory. Continue?" 0 0
-        response=$?
-        case $response in
-            0) 
-                # Clone into go-quai
-                cd $MAIN_DIR
-                git clone https://github.com/dominant-strategies/go-quai>/dev/null 2>&1 | \
-                dialog --title "Installation" \
-                --no-collapse \
-                --infobox "\nInstalling Full-Node. Please wait."  7 28
-
-                dialog --title "Installation" \
-                --no-collapse \
-                --msgbox "\nFull-Node installed. Press OK to continue." 7 28
-
-                #Configure go-quai
-                cd $HOME/$MAIN_DIR/go-quai
-                cp network.env.dist network.env
-                make go-quai>/dev/null 2>&1 | 
-                dialog --title "Installation" \
-                --no-collapse \
-                --infobox "\nGenerating binaries. Please wait. " 7 28
-
-                dialog --title "Installation" \
-                --no-collapse \
-                --msgbox "\nFull-Node configured. Press OK to continue." 7 28
-
-                # Clone into quai-manager
-                cd $HOME/$MAIN_DIR
-                git clone https://github.com/dominant-strategies/quai-manager>/dev/null 2>&1 | \
-                dialog --title "Installation" \
-                --no-collapse \
-                --infobox "\nInstalling Manager. Please wait."  7 28
-
-                dialog --title "Installation" \
-                --no-collapse \
-                --msgbox "\nManager installed. Press OK to continue." 7 28
-
-                #Configure quai-manager
-                cd $HOME/$MAIN_DIR/quai-manager
-                make quai-manager>/dev/null 2>&1 | \
-                dialog --title "Installation" 
-                --no-collapse \
-                --infobox "\nGenerating binaries. Please wait. " 7 28
-
-                dialog --title "Installation" \
-                --no-collapse \
-                --msgbox "\nManager configured. Installation complete. Press OK to return to the menu." 0 0
-                ;;
-            1) INSTALL="False";;
-            255) INSTALL="False";;
-        esac
-      fi
-      ;;
-    2 )
-        # Update go-quai
-        cd $HOME/quainetwork/go-quai
-        git pull>/dev/null 2>&1 && make go-quai>/dev/null 2>&1 | \
-        dialog --title "Update" \
-        --no-collapse \
-        --infobox "\nUpdating Full-Node. Please wait."  7 28
-        
-        dialog --title "Update" \
-        --no-collapse \
-        --msgbox "\nFull-Node updated. Press OK to continue." 7 28
-
-        # Update quai-manager
-        cd $HOME/quainetwork/quai-manager
-        git pull>/dev/null 2>&1 && make quai-manager>/dev/null 2>&1 | \
-        dialog --title "Update" \
-        --no-collapse \
-        --infobox "\nUpdating Manager. Please wait."  7 28
-
-        dialog --title "Update" \
-        --no-collapse \
-        --msgbox "\nManager updated. Press OK to return to the menu." 0 0
-      ;;
-    3 )
         #If node is running, redirect back to menu
         if $ISRUNNING; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nFull-Node is already running." 0 0
+            --msgbox  "\nNode is already running." 0 0
         else
             # Start go-quai
-            cd $HOME/quainetwork/go-quai && make run-all
+            cd $HOME/quainetwork/go-quai && make run-all >/dev/null 2>&1 | \
+            dialog --title "Node" \
+            --no-collapse \
+            --infobox "\nStarting Node.\n \nPlease wait." 0 0
             
             # Ask the user if they would like to view nodelogs
             dialog --title "Alert" \
             --no-collapse \
-            --yesno  "\nFull-Node started. Would you like to view the last 40 lines of your nodelogs?" 0 0
+            --yesno  "\nWould you like to view the last 40 lines of your nodelogs?" 0 0
             response=$?
             case $response in
                 0) 
@@ -304,7 +318,7 @@ while true; do
             esac
         fi
       ;;
-    4 )
+    2 )
         #If manager is running, redirect back to menu
         if $ISMINING; then
             dialog --title "Alert" \
@@ -313,7 +327,7 @@ while true; do
         elif ! $ISRUNNING; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease start your Full-Node before starting the Manager." 0 0
+            --msgbox  "\nPlease start your Node before starting the Manager." 0 0
         else
             REGION=$(dialog --nocancel --menu "Which region would you like to mine?" 0 0 3 \
                 1 "Cyprus" \
@@ -324,19 +338,18 @@ while true; do
                 2 "Zone-2" \
                 3 "Zone-3" 3>&1 1>&2 2>&3 3>&- )
 
-            # Start go-quai
+            # Start manager
             REGION=$(($REGION-1))
             ZONE=$(($ZONE-1))
-            cd $HOME/quainetwork/quai-manager && make run-mine-background region=$REGION zone=$ZONE
-            
-            dialog --title "Alert" \
+            cd $HOME/quainetwork/quai-manager && make run-mine-background region=$REGION zone=$ZONE >/dev/null 2>&1 | \
+            dialog --title "Manager" \
             --no-collapse \
-            --msgbox  "Manager started in: \nRegion: $REGION \nZone: $ZONE" 0 0
+            --infobox "\nStarting Manager.\n \nPlease wait." 0 0
             
             # Ask the user if they would like to view nodelogs
             dialog --title "Alert" \
             --no-collapse \
-            --yesno  "\nManager started. Would you like to view the last 40 lines of your miner logs?" 0 0
+            --yesno  "\nWould you like to view the last 40 lines of your miner logs?" 0 0
             response=$?
             case $response in
                 0) 
@@ -350,36 +363,78 @@ while true; do
             esac
         fi
       ;;
-    5 )
+    3 )
         # Verify the user wants to stop their node and manager
-        dialog --title "Alert" --yesno "\nAre you sure you want to stop the Full Node and/or Manager?" 0 0
-        response=$?
-        STOP="False"
-        case $response in
-            0) STOP="True";;
-            1) STOP="False";;
-            255) STOP="False";;
-        esac
-        if $STOP; then
-            #If user chooses stop, kill full node
-            cd $HOME/quainetwork/quai-manager
-            make stop>/dev/null 2>&1
-            cd $HOME/quainetwork/go-quai
-            make stop>/dev/null 2>&1 | \
-            dialog --title "Stop" \
+            dialog --title "Alert" --colors --yesno "\n\Z1Are you sure you want to stop the Node and/or Manager?\Zn" 0 0
+            response=$?
+            STOP="False"
+            case $response in
+                0) STOP="True";;
+                1) STOP="False";;
+                255) STOP="False";;
+            esac
+            if [ $STOP = "True" ]; then
+                #If user chooses stop, kill node
+                cd $HOME/$MAIN_DIR/quai-manager
+                make stop>/dev/null 2>&1
+                cd $HOME/$MAIN_DIR/go-quai
+                make stop>/dev/null 2>&1 | \
+                dialog --title "Stop" \
+                --no-collapse \
+                --infobox "\nStopping Node and/or Manager.\n \nPlease wait."  0 0
+                dialog --title "Stop" \
+                --no-cancel \
+                --msgbox "\nNode and/or Manager stopped.\n \nPress OK to return to the menu." 0 0
+            fi
+        ;;
+    4 )
+        # Update go-quai
+        if $ISMINING; then
+            dialog --title "Alert" \
             --no-collapse \
-            --infobox "\nStopping Full-Node and/or Manager. Please wait."  0 0
+            --msgbox  "\nPlease stop your node and manager to update." 0 0
+        elif $ISRUNNING; then
+            dialog --title "Alert" \
+            --no-collapse \
+            --msgbox  "\nPlease stop your node and manager to update." 0 0
+        else
+            cd $HOME/$MAIN_DIR/go-quai
+            git pull>/dev/null 2>&1 | \
+            dialog --title "Update" \
+            --no-collapse \
+            --infobox "\nUpdating Node.\n \nPlease wait." 0 0
+
+            make go-quai>/dev/null 2>&1 | \
+            dialog --title "Update" \
+            --no-collapse \
+            --infobox "\nUpdating Node.\n \nPlease wait." 0 0
             
-            dialog --title "Stop" \
+            dialog --title "Update" \
             --no-collapse \
-            --msgbox "\nFull-Node and/or Manager stopped. Press OK to return to the menu." 0 0
+            --msgbox "\nNode updated.\n \nPress OK to continue." 0 0
+
+            # Update quai-manager
+            cd $HOME/$MAIN_DIR/quai-manager 
+            git pull>/dev/null 2>&1 | \
+            dialog --title "Update" \
+            --no-collapse \
+            --infobox "\nUpdating Manager.\n \nPlease wait."  0 0
+            
+            make quai-manager>/dev/null 2>&1 | \
+            dialog --title "Update" \
+            --no-collapse \
+            --infobox "\nUpdating Manager.\n \nPlease wait."  0 0
+            
+            dialog --title "Update" \
+            --no-collapse \
+            --msgbox "\nManager updated.\n \nPress OK to return to the menu." 0 0
         fi
-      ;;
-    6 )
+        ;;
+    5 )
         if ! $NODELOGS; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox "\nPlease start your full-node before viewing nodelogs." 0 0
+            --msgbox "\nPlease start your node before viewing nodelogs." 0 0
         else
             #Print nodelogs
             cd
@@ -397,7 +452,6 @@ while true; do
                     11 "Hydra-1" \
                     12 "Hydra-2" \
                     13 "Hydra-3" 3>&1 1>&2 2>&3 3>&- )
-            dialog --nocancel --pause "This will show the last 40 lines of your nodelogs. Press OK to continue." 10 40 2
             case $LOCATION in
                 1) 
                     FILE="quainetwork/go-quai/nodelogs/prime.log"
@@ -443,7 +497,7 @@ while true; do
             dialog --cr-wrap --title "$FILE" --msgbox "\n$result" 0 0
         fi
       ;;
-    7 )
+    6 )
         if ! $MININGLOGS; then
             dialog --title "Alert" \
             --no-collapse \
@@ -451,12 +505,11 @@ while true; do
         else
             # Print Miner Logs
             cd
-            dialog --nocancel --pause "This will show the last 40 lines of your miner logs. Press OK to continue." 10 40 2
             result=`tail -40 quainetwork/quai-manager/logs/quai-manager.log`
             dialog --cr-wrap --title "quainetwork/quai-manager/logs/quai-manager.log" --msgbox "\n$result" 30 90
         fi
       ;;
-    8 )
+    7 )
         # Edit coinbase addresses in network.env
         if $ISMINING; then
             dialog --title "Alert" \
@@ -468,7 +521,7 @@ while true; do
             --msgbox  "\nPlease stop your node and manager to edit mining addresses." 0 0
         else
             cd $HOME/quainetwork/go-quai
-            LOCATION=$(dialog --nocancel --menu "Which mining address would you like to edit?" 0 0 13 \
+            LOCATION=$(dialog --colors --menu "Which mining address would you like to edit?\n \n\Z1Note: Entering an incorrect address will either break your node or send rewards to another user.\Zn" 0 0 13 \
                     1 "Prime" \
                     2 "Cyprus" \
                     3 "Paxos" \
@@ -539,7 +592,7 @@ while true; do
             rm -rf network.env.save
         fi
         ;;
-    9)
+    8)
         if $ISMINING; then
             dialog --title "Alert" \
             --no-collapse \
@@ -550,7 +603,7 @@ while true; do
             --msgbox  "\nPlease stop your node and manager to edit your config file." 0 0
         else
             cd $HOME/quainetwork/go-quai
-            LOCATION=$(dialog --menu "Which config variable would you like to edit?\n \nNote: do not change these values without knowing what they do." 0 0 13 \
+            LOCATION=$(dialog --colors --menu "Which config variable would you like to edit?\n \n\Z1Note: do not change these values without knowing what they do.\Zn" 0 0 13 \
                     1 "ENABLE_HTTP" \
                     2 "ENABLE_WS" \
                     3 "ENABLE_UNLOCK" \
@@ -611,7 +664,7 @@ while true; do
                 rm -rf network.env.save
         fi
     ;;
-    10)
+    9)
         # Clear db
         if $ISMINING; then
             dialog --title "Alert" \
@@ -622,7 +675,7 @@ while true; do
             --no-collapse \
             --msgbox  "\nPlease stop your node and manager to clear the db." 0 0
         else
-            dialog --yesno "Are you sure you want to clear your database and logs?" 0 0
+            dialog --colors --yesno "Are you sure you want to clear your database and logs?\n \n\Z1Warning: This will fully reset your node.\Zn" 0 0
             if [ $? -eq 0 ]; then
                 cd $HOME/quainetwork/go-quai
                 rm -rf nodelogs
