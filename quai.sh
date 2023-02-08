@@ -73,7 +73,7 @@ else
             #Inform user node is installed
             dialog --title "Installation" \
             --no-collapse \
-            --msgbox "\nNode installed. Press OK to continue." 7 28
+            --msgbox "\nNode installed.\n \nPress OK to continue." 7 28
 
             #Configure go-quai
             cd $HOME/$MAIN_DIR/go-quai
@@ -81,46 +81,36 @@ else
             make go-quai>/dev/null 2>&1 | 
             dialog --title "Installation" \
             --no-collapse \
-            --infobox "\nGenerating binaries. Please wait. " 7 28
-
-            # Ask user to input wallet addresses and replace them in the network.env file
-            dialog --title "Installation" \
-            --no-collapse \
-            --msgbox "\nPlease enter your 13 Quai addresses. Press OK to continue." 0 0
-            
-            ## Placeholder for new copy paste network.env thing
-            dialog --title "Installation" \
-            --no-collapse \
-            --msgbox "\nPLACEHOLDER" 0 0
+            --infobox "\nGenerating binaries.\n \nPlease wait. " 7 28
 
             #Inform user node is configured
             dialog --title "Installation" \
             --no-collapse \
-            --msgbox "\nNode and mining addresses configured. Press OK to continue." 0 0
+            --msgbox "\nNode configured.\n \nPress OK to continue." 0 0
 
             # Clone into quai-manager
             cd $HOME/$MAIN_DIR
             git clone https://github.com/dominant-strategies/quai-manager>/dev/null 2>&1 | \
             dialog --title "Installation" \
             --no-collapse \
-            --infobox "\nInstalling Manager. Please wait."  7 28
+            --infobox "\nInstalling Manager.\n \nPlease wait."  7 28
             
             #Inform user manager is installed
             dialog --title "Installation" \
             --no-collapse \
-            --msgbox "\nManager installed. Press OK to continue." 7 28
+            --msgbox "\nManager installed.\n \nPress OK to continue." 7 28
 
             #Configure quai-manager
             cd $HOME/$MAIN_DIR/quai-manager
             make quai-manager>/dev/null 2>&1 | \
             dialog --title "Installation" 
             --no-collapse \
-            --infobox "\nGenerating binaries. Please wait. " 7 28
+            --infobox "\nGenerating binaries.\n \nPlease wait. " 7 28
 
             #Inform user manager is configured
             dialog --title "Installation" \
             --no-collapse \
-            --msgbox "\nManager configured. Installation complete." 0 0
+            --msgbox "\nManager configured.\n \nInstallation complete." 0 0
             ;;
         1) 
             echo "Installation cancelled."
@@ -183,7 +173,7 @@ while true; do
     case $exit_status in
         $DIALOG_CANCEL)
         # Verify the user wants to stop their node and manager
-        dialog --title "Alert" --yesno "\nExit the program? This will stop your node and miner." 0 0
+        dialog --title "Alert" --yesno "\nExit the Quai Hardware Manager?\n \n\Z1This will stop your node and miner.\Zn" 0 0
         response=$?
         EXIT="False"
         case $response in
@@ -199,15 +189,15 @@ while true; do
             make stop>/dev/null 2>&1 | \
             dialog --title "Stop" \
             --no-collapse \
-            --infobox "\nStopping Node and/or Manager. Please wait."  0 0
+            --infobox "\nStopping Node and/or Manager.\n \nPlease wait."  0 0
             clear
-            echo "Program terminated."
+            echo "Quai Hardware Manager stopped."
             exit
         fi
         ;;
         $DIALOG_ESC)
         # Verify the user wants to stop their node and manager
-        dialog --yesno "\nExit the program? This will stop your node and miner." 0 0
+        dialog --title "Alert" --yesno "\nExit the Quai Hardware Manager?\n \n\Z1This will stop your node and miner.\Zn" 0 0
         response=$?
         EXIT="False"
         case $response in
@@ -225,7 +215,7 @@ while true; do
             --no-collapse \
             --infobox "\nStopping Node and/or Manager. Please wait."  0 0
             clear
-            echo "Program terminated."
+            echo "Quai Hardware Manager stopped."
             exit
         fi
         ;;

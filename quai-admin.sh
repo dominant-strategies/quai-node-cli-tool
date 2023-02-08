@@ -84,20 +84,10 @@ else
             --no-collapse \
             --infobox "\nGenerating binaries.\n \nPlease wait. " 7 28
 
-            # Ask user to input wallet addresses and replace them in the network.env file
-            dialog --title "Installation" \
-            --no-collapse \
-            --msgbox "\nPlease enter your 13 Quai addresses.\n \nPress OK to continue." 0 0
-            
-            ## Placeholder for new copy paste network.env thing
-            dialog --title "Installation" \
-            --no-collapse \
-            --msgbox "\nPLACEHOLDER" 0 0
-
             #Inform user node is configured
             dialog --title "Installation" \
             --no-collapse \
-            --msgbox "\nNode and mining addresses configured.\n \nPress OK to continue." 0 0
+            --msgbox "\nNode configured.\n \nPress OK to continue." 0 0
 
             # Clone into quai-manager
             cd $HOME/$MAIN_DIR
@@ -185,7 +175,7 @@ while true; do
   case $exit_status in
     $DIALOG_CANCEL)
       # Verify the user wants to stop their node and manager
-      dialog --title "Alert" --colors --yesno "\nExit the program?\n \n\Z1This will stop your node and miner.\Zn" 0 0
+      dialog --title "Alert" --colors --yesno "\nExit the Quai Hardware Manager?\n \n\Z1This will stop your node and miner.\Zn" 0 0
       response=$?
       EXIT="False"
       case $response in
@@ -203,13 +193,13 @@ while true; do
           --no-collapse \
           --infobox "\nStopping Node and/or Manager.\n \nPlease wait."  0 0
           clear
-        echo "Program terminated."
+        echo "Quai Hardware Manager stopped."
         exit
       fi
       ;;
     $DIALOG_ESC)
       # Verify the user wants to stop their node and manager
-      dialog --yesno "\nExit the program?\n \n\Z1This will stop your node and miner.\Zn" 0 0
+      dialog --title "Alert" --yesno "\nExit the Quai Hardware Manager?\n \n\Z1This will stop your node and miner.\Zn" 0 0
       response=$?
       EXIT="False"
       case $response in
@@ -227,7 +217,7 @@ while true; do
           --no-collapse \
           --infobox "\nStopping Node and/or Manager.\n \nPlease wait."  0 0
           clear
-        echo "Program terminated."
+        echo "Quai Hardware Manager stopped."
         exit
       fi
       ;;
