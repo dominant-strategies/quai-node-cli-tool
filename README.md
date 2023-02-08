@@ -24,20 +24,34 @@ This repository is a work in progress and is made purely to simplify the interac
 
 ## Executing Program
 
-To run the base script, open up a terminal window and navigate to the directory where you cloned the repo and run the following command:
+To run the base script, open up a terminal window and navigate to the directory where you cloned the repo. 
+Run the following command to make the script executable:
 
 ```
-sh quai.sh
+chmod +x quai.sh
+```
+You may need to run `sudo chmod +x quai.sh` if you get a permission denied error. You'll only need to do this once for each script.
+
+Then run the following command to execute the script:
+
+```
+./quai.sh
 ```
 
 The base script interface will look like this:
 
 ![quai.sh](./Screenshots/quaish.png)
 
-To run the advanced script, in the same directory, run the following command:
+To run the advanced script, in the same directory, run the following command to make the script executable:
 
 ```
-sh quai-admin.sh
+chmod +x quai-admin.sh
+```
+
+Then run the following command to execute the script:
+
+```
+./quai-admin.sh
 ```
 
 The advanced script interface will look like this:
