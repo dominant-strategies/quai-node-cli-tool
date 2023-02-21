@@ -5,7 +5,7 @@ DIALOG_ESC=255
 STYLECONFIG=~/.dialogrc
 MAIN_DIR="quainetwork"
 NODE_PROCESS="go-quai"
-MANAGER_PROCESS="quai-manager"
+MINER_PROCESS="quai-cpu-miner"
 
 if [ -f "$STYLECONFIG" ]; then
     echo "Styling config found."
@@ -37,7 +37,7 @@ else
 fi
 
 # Check installation status, if not found, prompt the user to install.
-if [[ -d "$HOME/$MAIN_DIR/go-quai" && -d "$HOME/$MAIN_DIR/quai-manager" ]]; then
+if [[ -d "$HOME/$MAIN_DIR/go-quai" && -d "$HOME/$MAIN_DIR/quai-cpu-miner" ]]; then
     :
 else
     # Check if user has configured wallet addresses
@@ -57,7 +57,7 @@ else
     esac
 
     # Check if user wants to install
-    dialog --title "Installation" --yesno "\nThis will install go-quai and quai-manager in the home directory.\n \nContinue?" 0 0
+    dialog --title "Installation" --yesno "\nThis will install go-quai and quai-cpu-miner in the home directory.\n \nContinue?" 0 0
     response=$?
     case $response in
         0) 
@@ -89,29 +89,31 @@ else
             --no-collapse \
             --msgbox "\nNode configured.\n \nPress OK to continue." 0 0
 
-            # Clone into quai-manager
+            # Clone into quai-cpu-miner
             cd $HOME/$MAIN_DIR
-            git clone https://github.com/dominant-strategies/quai-manager>/dev/null 2>&1 | \
+            git clone https://github.com/dominant-strategies/quai-cpu-miner>/dev/null 2>&1 | \
             dialog --title "Installation" \
             --no-collapse \
-            --infobox "\nInstalling Manager.\n \nPlease wait."  7 28
+            --infobox "\nInstalling Miner.\n \nPlease wait."  7 28
             
-            #Inform user manager is installed
+            #Inform user cpu-miner is installed
             dialog --title "Installation" \
             --no-collapse \
-            --msgbox "\nManager installed.\n \nPress OK to continue." 7 28
+            --msgbox "\nMiner installed.\n \nPress OK to continue." 7 28
 
-            #Configure quai-manager
-            cd $HOME/$MAIN_DIR/quai-manager
-            make quai-manager>/dev/null 2>&1 | \
+            #Configure quai-cpu-miner
+            cd $HOME/$MAIN_DIR/quai-cpu-miner/config
+            cp config.yaml.dist config.yaml
+            cd $HOME/$MAIN_DIR/quai-cpu-miner
+            make quai-cpu-miner>/dev/null 2>&1 | \
             dialog --title "Installation" 
             --no-collapse \
             --infobox "\nGenerating binaries.\n \nPlease wait. " 7 28
 
-            #Inform user manager is configured
+            #Inform user miner is configured
             dialog --title "Installation" \
             --no-collapse \
-            --msgbox "\nManager configured.\n \nInstallation complete." 0 0
+            --msgbox "\nMiner configured.\n \nInstallation complete." 0 0
             ;;
         1) 
             echo "Installation cancelled."
@@ -129,7 +131,7 @@ while true; do
         NODELOGS="False"
     fi
 
-    if [ -d "$HOME/quainetwork/quai-manager/logs" ]; then
+    if [ -d "$HOME/quainetwork/quai-cpu-miner/logs" ]; then
         MININGLOGS="True"
     else
         MININGLOGS="False"
@@ -144,13 +146,13 @@ while true; do
         STARTFULLNODE="Start Node - \Z1Stopped\Zn"
     fi
 
-    # Check if manager is running
-    if pgrep -x "$MANAGER_PROCESS">/dev/null 2>&1; then
+    # Check if miner is running
+    if pgrep -x "$MINER_PROCESS">/dev/null 2>&1; then
         ISMINING="True"
-        STARTMINING="Manager - \Z2Running\Zn"
+        STARTMINING="Miner - \Z2Running\Zn"
     else
         ISMINING="False"
-        STARTMINING="Start Manager - \Z1Stopped\Zn"
+        STARTMINING="Start Miner - \Z1Stopped\Zn"
     fi
 
   exec 3>&1
@@ -174,7 +176,7 @@ while true; do
   exec 3>&-
   case $exit_status in
     $DIALOG_CANCEL)
-      # Verify the user wants to stop their node and manager
+      # Verify the user wants to stop their node and miner
       dialog --title "Alert" --colors --yesno "\nExit the Quai Hardware Manager?\n \n\Z1This will stop your node and miner.\Zn" 0 0
       response=$?
       EXIT="False"
@@ -183,22 +185,22 @@ while true; do
           1) EXIT="False";;
           255) EXIT="False";;
       esac
-      if $EXIT; then
+      if [ $EXIT = "True" ]; then
           #If user chooses stop, kill node
-          cd $HOME/quainetwork/quai-manager
+          cd $HOME/quainetwork/quai-cpu-miner
           make stop>/dev/null 2>&1
           cd $HOME/quainetwork/go-quai
           make stop>/dev/null 2>&1 | \
           dialog --title "Stop" \
           --no-collapse \
-          --infobox "\nStopping Node and/or Manager.\n \nPlease wait."  0 0
+          --infobox "\nStopping Node and/or Miner.\n \nPlease wait."  0 0
           clear
         echo "Quai Hardware Manager stopped."
         exit
       fi
       ;;
     $DIALOG_ESC)
-      # Verify the user wants to stop their node and manager
+      # Verify the user wants to stop their node and miner
       dialog --title "Alert" --yesno "\nExit the Quai Hardware Manager?\n \n\Z1This will stop your node and miner.\Zn" 0 0
       response=$?
       EXIT="False"
@@ -207,15 +209,15 @@ while true; do
           1) EXIT="False";;
           255) EXIT="False";;
       esac
-      if $EXIT; then
+      if [ $EXIT = "True" ]; then
           #If user chooses stop, kill node
-          cd $HOME/quainetwork/quai-manager
+          cd $HOME/quainetwork/quai-cpu-miner
           make stop>/dev/null 2>&1
           cd $HOME/quainetwork/go-quai
           make stop>/dev/null 2>&1 | \
           dialog --title "Stop" \
           --no-collapse \
-          --infobox "\nStopping Node and/or Manager.\n \nPlease wait."  0 0
+          --infobox "\nStopping Node and/or Miner.\n \nPlease wait."  0 0
           clear
         echo "Quai Hardware Manager stopped."
         exit
@@ -225,7 +227,7 @@ while true; do
   case $selection in
     1 )
         #If node is running, redirect back to menu
-        if $ISRUNNING; then
+        if [ $ISRUNNING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
             --msgbox  "\nNode is already running." 0 0
@@ -309,15 +311,15 @@ while true; do
         fi
       ;;
     2 )
-        #If manager is running, redirect back to menu
-        if $ISMINING; then
+        #If miner is running, redirect back to menu
+        if [ $ISMINING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nManager is already running." 0 0
-        elif ! $ISRUNNING; then
+            --msgbox  "\nMiner is already running." 0 0
+        elif [ $ISRUNNING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease start your Node before starting the Manager." 0 0
+            --msgbox  "\nPlease start your Node before starting the Miner." 0 0
         else
             REGION=$(dialog --nocancel --menu "Which region would you like to mine?" 0 0 3 \
                 1 "Cyprus" \
@@ -328,25 +330,25 @@ while true; do
                 2 "Zone-2" \
                 3 "Zone-3" 3>&1 1>&2 2>&3 3>&- )
 
-            # Start manager
+            # Start miner
             REGION=$(($REGION-1))
             ZONE=$(($ZONE-1))
-            cd $HOME/quainetwork/quai-manager && make run-mine-background region=$REGION zone=$ZONE >/dev/null 2>&1 | \
-            dialog --title "Manager" \
+            cd $HOME/quainetwork/quai-cpu-miner && make run-mine-background region=$REGION zone=$ZONE >/dev/null 2>&1 | \
+            dialog --title "Miner" \
             --no-collapse \
-            --infobox "\nStarting Manager.\n \nPlease wait." 0 0
+            --infobox "\nStarting Miner.\n \nPlease wait." 0 0
             
-            # Ask the user if they would like to view nodelogs
+            # Ask the user if they would like to view miner logs
             dialog --title "Alert" \
             --no-collapse \
             --yesno  "\nWould you like to view the last 40 lines of your miner logs?" 0 0
             response=$?
             case $response in
                 0) 
-                    # Print nodelogs
+                    # Print miner logs
                     cd
-                    result=`tail -40 quainetwork/quai-manager/logs/quai-manager.log`
-                    dialog --cr-wrap --title "quainetwork/quai-manger/logs/quai-manager.log" --msgbox "\n$result" 30 90
+                    result=`tail -40 quainetwork/quai-cpu-miner/logs/slice-$REGION-$ZONE.log`
+                    dialog --cr-wrap --title "quainetwork/quai-cpu-miner/logs/slice-$REGION-$ZONE.log" --msgbox "\n$result" 30 90
                     ;;
                 1) clear;;
                 255) clear;;
@@ -354,8 +356,8 @@ while true; do
         fi
       ;;
     3 )
-        # Verify the user wants to stop their node and manager
-            dialog --title "Alert" --colors --yesno "\n\Z1Are you sure you want to stop the Node and/or Manager?\Zn" 0 0
+        # Verify the user wants to stop their node and miner
+            dialog --title "Alert" --colors --yesno "\n\Z1Are you sure you want to stop the Node and/or Miner?\Zn" 0 0
             response=$?
             STOP="False"
             case $response in
@@ -365,28 +367,28 @@ while true; do
             esac
             if [ $STOP = "True" ]; then
                 #If user chooses stop, kill node
-                cd $HOME/$MAIN_DIR/quai-manager
+                cd $HOME/$MAIN_DIR/quai-cpu-miner
                 make stop>/dev/null 2>&1
                 cd $HOME/$MAIN_DIR/go-quai
                 make stop>/dev/null 2>&1 | \
                 dialog --title "Stop" \
                 --no-collapse \
-                --infobox "\nStopping Node and/or Manager.\n \nPlease wait."  0 0
+                --infobox "\nStopping Node and/or Miner.\n \nPlease wait."  0 0
                 dialog --title "Stop" \
                 --no-cancel \
-                --msgbox "\nNode and/or Manager stopped.\n \nPress OK to return to the menu." 0 0
+                --msgbox "\nNode and/or Miner stopped.\n \nPress OK to return to the menu." 0 0
             fi
         ;;
     4 )
         # Update go-quai
-        if $ISMINING; then
+        if [ $ISMINING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and manager to update." 0 0
-        elif $ISRUNNING; then
+            --msgbox  "\nPlease stop your node and miner to update." 0 0
+        elif [ $ISRUNNING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and manager to update." 0 0
+            --msgbox  "\nPlease stop your node and miner to update." 0 0
         else
             cd $HOME/$MAIN_DIR/go-quai
             git pull>/dev/null 2>&1 | \
@@ -403,25 +405,25 @@ while true; do
             --no-collapse \
             --msgbox "\nNode updated.\n \nPress OK to continue." 0 0
 
-            # Update quai-manager
-            cd $HOME/$MAIN_DIR/quai-manager 
+            # Update quai-cpu-miner
+            cd $HOME/$MAIN_DIR/quai-cpu-miner 
             git pull>/dev/null 2>&1 | \
             dialog --title "Update" \
             --no-collapse \
-            --infobox "\nUpdating Manager.\n \nPlease wait."  0 0
+            --infobox "\nUpdating Miner.\n \nPlease wait."  0 0
             
-            make quai-manager>/dev/null 2>&1 | \
+            make quai-cpu-miner>/dev/null 2>&1 | \
             dialog --title "Update" \
             --no-collapse \
-            --infobox "\nUpdating Manager.\n \nPlease wait."  0 0
+            --infobox "\nUpdating Miner.\n \nPlease wait."  0 0
             
             dialog --title "Update" \
             --no-collapse \
-            --msgbox "\nManager updated.\n \nPress OK to return to the menu." 0 0
+            --msgbox "\nMiner updated.\n \nPress OK to return to the menu." 0 0
         fi
         ;;
     5 )
-        if ! $NODELOGS; then
+        if [ $NODELOGS = "False" ]; then
             dialog --title "Alert" \
             --no-collapse \
             --msgbox "\nPlease start your node before viewing nodelogs." 0 0
@@ -488,27 +490,39 @@ while true; do
         fi
       ;;
     6 )
-        if ! $MININGLOGS; then
+        if [ $MININGLOGS = "False"]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox "\nPlease start your manager before viewing manager logs." 0 0
+            --msgbox "\nPlease start your miner before viewing logs." 0 0
         else
             # Print Miner Logs
+            REGION=$(dialog --nocancel --menu "Which region would you like to view logs for?" 0 0 3 \
+                1 "Cyprus" \
+                2 "Paxos" \
+                3 "Hydra" 3>&1 1>&2 2>&3 3>&- )
+            ZONE=$(dialog --nocancel --menu "Which region would you like to view logs for?" 0 0 3 \
+                1 "Zone-1" \
+                2 "Zone-2" \
+                3 "Zone-3" 3>&1 1>&2 2>&3 3>&- )
+
+            # Start miner
+            REGION=$(($REGION-1))
+            ZONE=$(($ZONE-1))
             cd
-            result=`tail -40 quainetwork/quai-manager/logs/quai-manager.log`
-            dialog --cr-wrap --title "quainetwork/quai-manager/logs/quai-manager.log" --msgbox "\n$result" 30 90
+            result=`tail -40 quainetwork/quai-cpu-miner/logs/slice-$REGION-$ZONE.log`
+            dialog --cr-wrap --title "quainetwork/quai-cpu-miner/logs/slice-$REGION-$ZONE.log" --msgbox "\n$result" 30 90
         fi
       ;;
     7 )
         # Edit coinbase addresses in network.env
-        if $ISMINING; then
+        if [ $ISMINING = "True"]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and manager to edit mining addresses." 0 0
-        elif $ISRUNNING; then
+            --msgbox  "\nPlease stop your node and miner to edit mining addresses." 0 0
+        elif [ $ISRUNNING = "True"]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and manager to edit mining addresses." 0 0
+            --msgbox  "\nPlease stop your node and miner to edit mining addresses." 0 0
         else
             cd $HOME/quainetwork/go-quai
             LOCATION=$(dialog --colors --menu "Which mining address would you like to edit?\n \n\Z1Note: Entering an incorrect address will either break your node or send rewards to another user.\Zn" 0 0 13 \
@@ -583,14 +597,14 @@ while true; do
         fi
         ;;
     8)
-        if $ISMINING; then
+        if [ $ISMINING = "True"]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and manager to edit your config file." 0 0
-        elif $ISRUNNING; then
+            --msgbox  "\nPlease stop your node and miner to edit your config file." 0 0
+        elif [ $ISRUNNING = "True"]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and manager to edit your config file." 0 0
+            --msgbox  "\nPlease stop your node and miner to edit your config file." 0 0
         else
             cd $HOME/quainetwork/go-quai
             LOCATION=$(dialog --colors --menu "Which config variable would you like to edit?\n \n\Z1Note: do not change these values without knowing what they do.\Zn" 0 0 13 \
@@ -656,24 +670,24 @@ while true; do
     ;;
     9)
         # Clear db
-        if $ISMINING; then
+        if [ $ISMINING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and manager to clear the db." 0 0
-        elif $ISRUNNING; then
+            --msgbox  "\nPlease stop your node and miner to clear the db." 0 0
+        elif [ $ISRUNNING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and manager to clear the db." 0 0
+            --msgbox  "\nPlease stop your node and miner to clear the db." 0 0
         else
-            dialog --colors --yesno "Are you sure you want to clear your database and logs?\n \n\Z1Warning: This will fully reset your node.\Zn" 0 0
+            dialog --colors --yesno "Are you sure you want to clear your database and logs?\n \n\Z1Warning: This will fully reset your node and miner.\Zn" 0 0
             if [ $? -eq 0 ]; then
                 cd $HOME/quainetwork/go-quai
                 rm -rf nodelogs
                 rm -rf ~/Library/Quai
                 yes | ./build/bin/quai removedb
-                cd $HOME/quainetwork/quai-manager
+                cd $HOME/quainetwork/quai-cpu-miner
                 rm -rf logs
-                dialog --cr-wrap --msgbox "Database cleared. Nodelogs removed." 0 0
+                dialog --cr-wrap --msgbox "Database cleared. Node and miner logs removed." 0 0
             fi 
         fi
     ;;
