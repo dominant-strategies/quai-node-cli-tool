@@ -316,7 +316,7 @@ while true; do
             dialog --title "Alert" \
             --no-collapse \
             --msgbox  "\nMiner is already running." 0 0
-        elif [ $ISRUNNING = "True" ]; then
+        elif [ $ISRUNNING = "False" ]; then
             dialog --title "Alert" \
             --no-collapse \
             --msgbox  "\nPlease start your Node before starting the Miner." 0 0
@@ -490,7 +490,7 @@ while true; do
         fi
       ;;
     6 )
-        if [ $MININGLOGS = "False"]; then
+        if [ $MININGLOGS = "False" ]; then
             dialog --title "Alert" \
             --no-collapse \
             --msgbox "\nPlease start your miner before viewing logs." 0 0
@@ -515,11 +515,11 @@ while true; do
       ;;
     7 )
         # Edit coinbase addresses in network.env
-        if [ $ISMINING = "True"]; then
+        if [ $ISMINING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
             --msgbox  "\nPlease stop your node and miner to edit mining addresses." 0 0
-        elif [ $ISRUNNING = "True"]; then
+        elif [ $ISRUNNING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
             --msgbox  "\nPlease stop your node and miner to edit mining addresses." 0 0
@@ -597,11 +597,11 @@ while true; do
         fi
         ;;
     8)
-        if [ $ISMINING = "True"]; then
+        if [ $ISMINING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
             --msgbox  "\nPlease stop your node and miner to edit your config file." 0 0
-        elif [ $ISRUNNING = "True"]; then
+        elif [ $ISRUNNING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
             --msgbox  "\nPlease stop your node and miner to edit your config file." 0 0

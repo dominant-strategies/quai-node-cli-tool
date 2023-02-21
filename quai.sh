@@ -148,7 +148,7 @@ while true; do
     fi
 
     # Check if miner is running
-    if pgrep -x "$MANAGER_PROCESS">/dev/null 2>&1; then
+    if pgrep -x "$MINER_PROCESS">/dev/null 2>&1; then
         ISMINING="True"
         STARTMINING="Miner - \Z2Running\Zn"
     else
@@ -175,7 +175,7 @@ while true; do
     case $exit_status in
         $DIALOG_CANCEL)
         # Verify the user wants to stop their node and miner
-        dialog --title "Alert" --yesno "\nExit the Quai Hardware Manager?\n \n\Z1This will stop your node and miner.\Zn" 0 0
+        dialog --colors --title "Alert" --yesno "\nExit the Quai Hardware Manager?\n \n\Z1This will stop your node and miner.\Zn" 0 0
         response=$?
         EXIT="False"
         case $response in
@@ -190,6 +190,7 @@ while true; do
             cd $HOME/$MAIN_DIR/go-quai
             make stop>/dev/null 2>&1 | \
             dialog --title "Stop" \
+            --colors \
             --no-collapse \
             --infobox "\nStopping Node and/or Miner.\n \nPlease wait."  0 0
             clear
@@ -199,7 +200,7 @@ while true; do
         ;;
         $DIALOG_ESC)
         # Verify the user wants to stop their node and miner
-        dialog --title "Alert" --yesno "\nExit the Quai Hardware Manager?\n \n\Z1This will stop your node and miner.\Zn" 0 0
+        dialog --colors --title "Alert" --yesno "\nExit the Quai Hardware Manager?\n \n\Z1This will stop your node and miner.\Zn" 0 0
         response=$?
         EXIT="False"
         case $response in
@@ -214,6 +215,7 @@ while true; do
             cd $HOME/$MAIN_DIR/go-quai
             make stop>/dev/null 2>&1 | \
             dialog --title "Stop" \
+            --colors \
             --no-collapse \
             --infobox "\nStopping Node and/or Miner. Please wait."  0 0
             clear
@@ -381,37 +383,47 @@ while true; do
             fi
         ;;
         4 )
-            # Update go-quai
-            cd $HOME/$MAIN_DIR/go-quai
-            git pull>/dev/null 2>&1 | \
-            dialog --title "Update" \
-            --no-collapse \
-            --infobox "\nUpdating Node. Please wait."  7 28
+            if [ $ISMINING = "True" ]; then
+                dialog --title "Alert" \
+                --no-collapse \
+                --msgbox  "\nPlease stop your node and miner to update." 0 0
+            elif [ $ISRUNNING = "True" ]; then
+                dialog --title "Alert" \
+                --no-collapse \
+                --msgbox  "\nPlease stop your node and miner to update." 0 0
+            else
+                # Update go-quai
+                cd $HOME/$MAIN_DIR/go-quai
+                git pull>/dev/null 2>&1 | \
+                dialog --title "Update" \
+                --no-collapse \
+                --infobox "\nUpdating Node. Please wait."  7 28
 
-            make go-quai>/dev/null 2>&1 | \
-            dialog --title "Update" \
-            --no-collapse \
-            --infobox "\nUpdating Node. Please wait."  7 28
-            
-            dialog --title "Update" \
-            --no-collapse \
-            --msgbox "\nNode updated. Press OK to continue." 7 28
+                make go-quai>/dev/null 2>&1 | \
+                dialog --title "Update" \
+                --no-collapse \
+                --infobox "\nUpdating Node. Please wait."  7 28
+                
+                dialog --title "Update" \
+                --no-collapse \
+                --msgbox "\nNode updated. Press OK to continue." 7 28
 
-            # Update quai-cpu-miner
-            cd $HOME/$MAIN_DIR/quai-cpu-miner 
-            git pull>/dev/null 2>&1 | \
-            dialog --title "Update" \
-            --no-collapse \
-            --infobox "\nUpdating Miner. Please wait."  7 28
-            
-            make quai-cpu-miner>/dev/null 2>&1 | \
-            dialog --title "Update" \
-            --no-collapse \
-            --infobox "\nUpdating Miner. Please wait."  7 28
-            
-            dialog --title "Update" \
-            --no-collapse \
-            --msgbox "\nMiner updated. Press OK to return to the menu." 0 0
+                # Update quai-cpu-miner
+                cd $HOME/$MAIN_DIR/quai-cpu-miner 
+                git pull>/dev/null 2>&1 | \
+                dialog --title "Update" \
+                --no-collapse \
+                --infobox "\nUpdating Miner. Please wait."  7 28
+                
+                make quai-cpu-miner>/dev/null 2>&1 | \
+                dialog --title "Update" \
+                --no-collapse \
+                --infobox "\nUpdating Miner. Please wait."  7 28
+                
+                dialog --title "Update" \
+                --no-collapse \
+                --msgbox "\nMiner updated. Press OK to return to the menu." 0 0
+            fi
         ;;
         5 )
             if [ $NODELOGS = "False" ]; then
@@ -481,7 +493,7 @@ while true; do
             fi
         ;;
         6 ) 
-            if [ $MININGLOGS = "False"]; then
+            if [ $MININGLOGS = "False" ]; then
                 dialog --title "Alert" \
                 --no-collapse \
                 --msgbox "\nPlease start your miner before viewing logs." 0 0
@@ -501,6 +513,7 @@ while true; do
                 cd
                 result=`tail -40 quainetwork/quai-cpu-miner/logs/slice-$REGION-$ZONE.log`
                 dialog --cr-wrap --title "quainetwork/quai-cpu-miner/logs/slice-$REGION-$ZONE.log" --msgbox "\n$result" 30 90
-            ;;
+            fi
+        ;;
   esac
 done
