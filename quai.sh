@@ -216,7 +216,7 @@ while true; do
     1 )
         #If node is running, redirect back to menu
         if [ $ISRUNNING = "True" ]; then
-            dialog --title "Alert" --colors --yesno "\n\Z1Are you sure you want to stop your node?\Zn" 0 0
+            dialog --title "Alert" --colors --yesno "\n\Z1Are you sure you want to stop your node? This will also stop your proxy.\Zn" 0 0
             response=$?
             STOP="False"
             case $response in
@@ -227,6 +227,7 @@ while true; do
             if [ $STOP = "True" ]; then
                 #If user chooses stop, kill node
                 cd $HOME/$MAIN_DIR/go-quai
+                pkill -9 quai-stratum &>/dev/null
                 make stop >/dev/null 2>&1 | \
                 dialog --title "Stop" \
                 --no-collapse \
