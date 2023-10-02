@@ -5,7 +5,7 @@ DIALOG_ESC=255
 STYLECONFIG=~/.dialogrc
 MAIN_DIR="quainetwork"
 NODE_PROCESS="go-quai"
-MINER_PROCESS="quai-cpu-miner"
+PROXY_PROCESS="quai-stratum"
 
 if [ -f "$STYLECONFIG" ]; then
     echo "Styling config found."
@@ -37,7 +37,7 @@ else
 fi
 
 # Check installation status, if not found, prompt the user to install.
-if [[ -d "$HOME/$MAIN_DIR/go-quai" && -d "$HOME/$MAIN_DIR/quai-cpu-miner" ]]; then
+if [[ -d "$HOME/$MAIN_DIR/go-quai" && -d "$HOME/$MAIN_DIR/go-quai-stratum" ]]; then
     :
 else
     # Check if user has configured wallet addresses
@@ -47,8 +47,7 @@ else
         0)  : ;;
         1)
             # Inform user to configure addresses
-            dialog --title "Installation" --msgbox "\nPlease configure your wallet addresses before continuing." 0 0
-            echo "You can set up addresses here: https://docs.quai.network/use-quai/wallets/quaisnap"
+            dialog --title "Installation" --colors --msgbox "\nPlease configure your wallet addresses before continuing.\n \nYou can set up addresses using Pelagus Wallet: \Z1https://pelaguswallet.io\Zn \n \nPress okay to exit." 0 0
             exit
             ;;
         255)
@@ -57,68 +56,67 @@ else
     esac
 
     # Check if user wants to install
-    dialog --title "Installation" --yesno "\nThis will install go-quai and quai-cpu-miner in the home directory.\n \nContinue?" 0 0
+    NODE_LATEST_TAG=$(curl -s "https://api.github.com/repos/dominant-strategies/go-quai/tags" | jq -r '.[0].name')
+    PROXY_LATEST_TAG=$(curl -s "https://api.github.com/repos/dominant-strategies/go-quai-stratum/tags" | jq -r '.[0].name')
+    dialog --title "Installation" --colors --yesno "\nThis will install the most current releases of go-quai \Z1($NODE_LATEST_TAG)\Zn and go-quai-stratum \Z1($PROXY_LATEST_TAG)\Zn in the home directory.\n \nContinue?" 0 0
     response=$?
     case $response in
         0) 
             # Create directory
             cd $HOME
-            mkdir $MAIN_DIR
+            if [[ -d "$MAIN_DIR" ]]; then
+                :
+            else
+                mkdir $MAIN_DIR
+            fi
             # Clone into go-quai
             cd $MAIN_DIR
-            git clone https://github.com/dominant-strategies/go-quai>/dev/null 2>&1 | \
+            git clone https://github.com/dominant-strategies/go-quai>/dev/null 2>&1
+            cd $HOME/$MAIN_DIR/go-quai
+            git checkout $NODE_LATEST_TAG >/dev/null 2>&1 | \
             dialog --title "Installation" \
             --no-collapse \
-            --infobox "\nInstalling Node. Please wait."  7 28
-            
-            #Inform user node is installed
-            dialog --title "Installation" \
-            --no-collapse \
-            --msgbox "\nNode installed.\n \nPress OK to continue." 7 28
+            --infobox "\nInstalling go-quai.\n"  7 28
 
             #Configure go-quai
-            cd $HOME/$MAIN_DIR/go-quai
             cp network.env.dist network.env
             make go-quai>/dev/null 2>&1 | 
             dialog --title "Installation" \
             --no-collapse \
-            --infobox "\nGenerating binaries.\n \nPlease wait. " 7 28
+            --infobox "\nGenerating binaries.\n" 7 28
 
             #Inform user node is configured
             dialog --title "Installation" \
             --no-collapse \
-            --msgbox "\nNode configured.\n \nPress OK to continue." 0 0
+            --msgbox "\nNode installed and configured.\n \nPress OK to continue." 0 0
 
-            # Clone into quai-cpu-miner
+            # Clone into go-quai-stratum
             cd $HOME/$MAIN_DIR
-            git clone https://github.com/dominant-strategies/quai-cpu-miner>/dev/null 2>&1 | \
+            git clone https://github.com/dominant-strategies/go-quai-stratum>/dev/null 2>&1
+            cd $HOME/$MAIN_DIR/go-quai-stratum
+            git checkout $PROXY_LATEST_TAG >/dev/null 2>&1 | \
             dialog --title "Installation" \
             --no-collapse \
-            --infobox "\nInstalling Miner.\n \nPlease wait."  7 28
-            
-            #Inform user cpu-miner is installed
-            dialog --title "Installation" \
-            --no-collapse \
-            --msgbox "\nMiner installed.\n \nPress OK to continue." 7 28
+            --infobox "\nInstalling Stratum Proxy.\n"  7 28
 
-            #Configure quai-cpu-miner
-            cd $HOME/$MAIN_DIR/quai-cpu-miner/config
-            cp config.yaml.dist config.yaml
-            cd $HOME/$MAIN_DIR/quai-cpu-miner
-            make quai-cpu-miner>/dev/null 2>&1 | \
+            #Configure go-quai-stratum
+            cp config/config.example.json config/config.json
+            make quai-stratum>/dev/null 2>&1 | \
             dialog --title "Installation" 
             --no-collapse \
-            --infobox "\nGenerating binaries.\n \nPlease wait. " 7 28
+            --infobox "\nGenerating binaries.\n" 7 28
 
-            #Inform user miner is configured
+            #Inform user stratum proxy is configured
             dialog --title "Installation" \
             --no-collapse \
-            --msgbox "\nMiner configured.\n \nInstallation complete." 0 0
+            --msgbox "\nStratum proxy installed and configured.\n \nInstallation complete.\n \nPress OK to continue." 0 0
             ;;
         1) 
+            clear
             echo "Installation cancelled."
             exit ;;
-        255) 
+        255)
+            clear 
             echo "Installation cancelled."
             exit ;;
     esac
@@ -131,28 +129,22 @@ while true; do
         NODELOGS="False"
     fi
 
-    if [ -d "$HOME/quainetwork/quai-cpu-miner/logs" ]; then
-        MININGLOGS="True"
-    else
-        MININGLOGS="False"
-    fi
-
     # Check if node is running
     if pgrep -x "$NODE_PROCESS">/dev/null 2>&1; then
         ISRUNNING="True"
-        STARTFULLNODE="Node - \Z2Running\Zn"
+        STARTFULLNODE="Stop Node - \Z2Running\Zn"
     else
         ISRUNNING="False"
         STARTFULLNODE="Start Node - \Z1Stopped\Zn"
     fi
 
-    # Check if miner is running
-    if pgrep -x "$MINER_PROCESS">/dev/null 2>&1; then
-        ISMINING="True"
-        STARTMINING="Miner - \Z2Running\Zn"
+    # Check if proxy is running
+    if pgrep -x "$PROXY_PROCESS">/dev/null 2>&1; then
+        ISPROXYRUNNING="True"
+        STARTPROXY="Stop Proxy - \Z2Running\Zn"
     else
-        ISMINING="False"
-        STARTMINING="Start Miner - \Z1Stopped\Zn"
+        ISPROXYRUNNING="False"
+        STARTPROXY="Start Proxy - \Z1Stopped\Zn"
     fi
 
   exec 3>&1
@@ -163,21 +155,19 @@ while true; do
     --cancel-label "EXIT" \
     --menu "Select an Option:" 17 50 10 \
     "1" "$STARTFULLNODE" \
-    "2" "$STARTMINING" \
-    "3" "Stop" \
-    "4" "Update" \
-    "5" "Node Logs" \
-    "6" "Miner Logs" \
-    "7" "Edit Mining Addresses" \
-    "8" "Edit Config Variables" \
-    "9" "Clear logs & db" \
+    "2" "$STARTPROXY" \
+    "3" "Update Node & Proxy" \
+    "4" "Node Logs" \
+    "5" "Edit Mining Addresses" \
+    "6" "Edit Config Variables" \
+    "7" "Clear logs & db" \
     2>&1 1>&3)
   exit_status=$?
   exec 3>&-
   case $exit_status in
     $DIALOG_CANCEL)
-      # Verify the user wants to stop their node and miner
-      dialog --title "Alert" --colors --yesno "\nExit the Quai Hardware Manager?\n \n\Z1This will stop your node and miner.\Zn" 0 0
+      # Verify the user wants to stop their node and proxy
+      dialog --title "Alert" --colors --yesno "\nExit the Quai Hardware Manager?\n \n\Z1This will stop your node and proxy.\Zn" 0 0
       response=$?
       EXIT="False"
       case $response in
@@ -187,21 +177,20 @@ while true; do
       esac
       if [ $EXIT = "True" ]; then
           #If user chooses stop, kill node
-          cd $HOME/quainetwork/quai-cpu-miner
-          make stop>/dev/null 2>&1
           cd $HOME/quainetwork/go-quai
+          pkill -9 quai-stratum 1>&- 2>&- && \
           make stop>/dev/null 2>&1 | \
           dialog --title "Stop" \
           --no-collapse \
-          --infobox "\nStopping Node and/or Miner.\n \nPlease wait."  0 0
+          --infobox "\nStopping Node and Proxy.\n \nPlease wait."  0 0
           clear
         echo "Quai Hardware Manager stopped."
         exit
       fi
       ;;
     $DIALOG_ESC)
-      # Verify the user wants to stop their node and miner
-      dialog --title "Alert" --yesno "\nExit the Quai Hardware Manager?\n \n\Z1This will stop your node and miner.\Zn" 0 0
+      # Verify the user wants to stop their node and proxy
+      dialog --title "Alert" --yesno "\nExit the Quai Hardware Manager?\n \n\Z1This will stop your node and proxy.\Zn" 0 0
       response=$?
       EXIT="False"
       case $response in
@@ -211,13 +200,12 @@ while true; do
       esac
       if [ $EXIT = "True" ]; then
           #If user chooses stop, kill node
-          cd $HOME/quainetwork/quai-cpu-miner
-          make stop>/dev/null 2>&1
           cd $HOME/quainetwork/go-quai
+          pkill -9 quai-stratum 1>&- 2>&- && \
           make stop>/dev/null 2>&1 | \
           dialog --title "Stop" \
           --no-collapse \
-          --infobox "\nStopping Node and/or Miner.\n \nPlease wait."  0 0
+          --infobox "\nStopping Node and Proxy.\n \nPlease wait."  0 0
           clear
         echo "Quai Hardware Manager stopped."
         exit
@@ -228,12 +216,47 @@ while true; do
     1 )
         #If node is running, redirect back to menu
         if [ $ISRUNNING = "True" ]; then
+            dialog --title "Alert" --colors --yesno "\n\Z1Are you sure you want to stop your node?\Zn" 0 0
+            response=$?
+            STOP="False"
+            case $response in
+                0) STOP="True";;
+                1) STOP="False";;
+                255) STOP="False";;
+            esac
+            if [ $STOP = "True" ]; then
+                #If user chooses stop, kill node
+                cd $HOME/$MAIN_DIR/go-quai
+                make stop >/dev/null 2>&1 | \
+                dialog --title "Stop" \
+                --no-collapse \
+                --infobox "\nStopping Node.\n \nPlease wait."  0 0
+                dialog --title "Stop" \
+                --no-cancel \
+                --msgbox "\nNode stopped.\n \nPress OK to return to the menu." 0 0
+            fi
+        else
+            # Slice selection
+            NODEREGION=$(dialog --nocancel --menu "Which region would you like to run your node?\n \nIf you'd like to run a global node, you'll have to manually configure it the network.env." 0 0 3 \
+                1 "Region-1" \
+                2 "Region-2" \
+                3 "Region-3" 3>&1 1>&2 2>&3 3>&- )
+            NODEZONE=$(dialog --nocancel --menu "Which zone would you like to run your node?" 0 0 3 \
+                1 "Zone-1" \
+                2 "Zone-2" \
+                3 "Zone-3" 3>&1 1>&2 2>&3 3>&- )
+
+            NODEREGION=$(($NODEREGION-1))
+            NODEZONE=$(($NODEZONE-1))
+            
+            cd $HOME/$MAIN_DIR/go-quai && sed -i.save "s/^SLICES *=.*/SLICES='[$NODEREGION $NODEZONE]'/" network.env | \ 
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nNode is already running." 0 0
-        else
+            --infobox "\n Slice set to [$NODEREGION $NODEZONE].\n \nPlease wait." 0 0
+            rm -rf network.env.save
+           
             # Start go-quai
-            cd $HOME/quainetwork/go-quai && make run-all >/dev/null 2>&1 | \
+            make run >/dev/null 2>&1 | \
             dialog --title "Node" \
             --no-collapse \
             --infobox "\nStarting Node.\n \nPlease wait." 0 0
@@ -247,7 +270,7 @@ while true; do
                 0) 
                     #Print nodelogs
                     cd
-                    LOCATION=$(dialog --nocancel --menu "In which location would you like to view nodelogs?" 0 0 13 \
+                    LOCATION=$(dialog --nocancel --menu "In which location would you like to view nodelogs? \nLogs will only populate in the location your slice is running." 0 0 13 \
                             1 "Prime" \
                             2 "Cyprus" \
                             3 "Paxos" \
@@ -311,53 +334,9 @@ while true; do
         fi
       ;;
     2 )
-        #If miner is running, redirect back to menu
-        if [ $ISMINING = "True" ]; then
-            dialog --title "Alert" \
-            --no-collapse \
-            --msgbox  "\nMiner is already running." 0 0
-        elif [ $ISRUNNING = "False" ]; then
-            dialog --title "Alert" \
-            --no-collapse \
-            --msgbox  "\nPlease start your Node before starting the Miner." 0 0
-        else
-            REGION=$(dialog --nocancel --menu "Which region would you like to mine?" 0 0 3 \
-                1 "Cyprus" \
-                2 "Paxos" \
-                3 "Hydra" 3>&1 1>&2 2>&3 3>&- )
-            ZONE=$(dialog --nocancel --menu "Which region would you like to mine?" 0 0 3 \
-                1 "Zone-1" \
-                2 "Zone-2" \
-                3 "Zone-3" 3>&1 1>&2 2>&3 3>&- )
-
-            # Start miner
-            REGION=$(($REGION-1))
-            ZONE=$(($ZONE-1))
-            cd $HOME/quainetwork/quai-cpu-miner && make run-mine-background region=$REGION zone=$ZONE >/dev/null 2>&1 | \
-            dialog --title "Miner" \
-            --no-collapse \
-            --infobox "\nStarting Miner.\n \nPlease wait." 0 0
-            
-            # Ask the user if they would like to view miner logs
-            dialog --title "Alert" \
-            --no-collapse \
-            --yesno  "\nWould you like to view the last 40 lines of your miner logs?" 0 0
-            response=$?
-            case $response in
-                0) 
-                    # Print miner logs
-                    cd
-                    result=`tail -40 quainetwork/quai-cpu-miner/logs/slice-$REGION-$ZONE.log`
-                    dialog --cr-wrap --title "quainetwork/quai-cpu-miner/logs/slice-$REGION-$ZONE.log" --msgbox "\n$result" 30 90
-                    ;;
-                1) clear;;
-                255) clear;;
-            esac
-        fi
-      ;;
-    3 )
-        # Verify the user wants to stop their node and miner
-            dialog --title "Alert" --colors --yesno "\n\Z1Are you sure you want to stop the Node and/or Miner?\Zn" 0 0
+        #If proxy is running, redirect back to menu
+        if [ $ISPROXYRUNNING = "True" ]; then
+            dialog --title "Alert" --colors --yesno "\n\Z1Are you sure you want to stop the Proxy?\Zn" 0 0
             response=$?
             STOP="False"
             case $response in
@@ -367,31 +346,111 @@ while true; do
             esac
             if [ $STOP = "True" ]; then
                 #If user chooses stop, kill node
-                cd $HOME/$MAIN_DIR/quai-cpu-miner
-                make stop>/dev/null 2>&1
-                cd $HOME/$MAIN_DIR/go-quai
-                make stop>/dev/null 2>&1 | \
+                pkill -9 quai-stratum &>/dev/null | \
                 dialog --title "Stop" \
                 --no-collapse \
-                --infobox "\nStopping Node and/or Miner.\n \nPlease wait."  0 0
+                --infobox "\nStopping Proxy.\n \nPlease wait."  0 0
                 dialog --title "Stop" \
                 --no-cancel \
-                --msgbox "\nNode and/or Miner stopped.\n \nPress OK to return to the menu." 0 0
+                --msgbox "\nProxy stopped.\n \nPress OK to return to the menu." 0 0
             fi
-        ;;
-    4 )
-        # Update go-quai
-        if [ $ISMINING = "True" ]; then
+        elif [ $ISRUNNING = "False" ]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and miner to update." 0 0
+            --msgbox  "\nPlease start your Node before starting the Proxy." 0 0
+        else
+            ZONE=$(($NODEZONE+1))
+            REGION=$(($NODEREGION+1))
+            case $REGION in
+                1)
+                    REGION_PORT=8579
+                    REGION_NAME="Cyprus"
+                    case $ZONE in
+                        1)
+                            ZONE_PORT=8611
+                            ZONE_NAME="Cyprus-1"
+                            ;;
+                        2)
+                            ZONE_PORT=8643
+                            ZONE_NAME="Cyprus-2"
+                            ;;
+                        3)
+                            ZONE_PORT=8675
+                            ZONE_NAME="Cyprus-3"
+                            ;;
+                    esac
+                    ;;
+                2)
+                    REGION_PORT=8581
+                    REGION_NAME="Paxos"
+                    case $ZONE in
+                        1)
+                            ZONE_PORT=8613
+                            ZONE_NAME="Paxos-1"
+                            ;;
+                        2)
+                            ZONE_PORT=8645
+                            ZONE_NAME="Paxos-2"
+                            ;;
+                        3)
+                            ZONE_PORT=8677
+                            ZONE_NAME="Paxos-3"
+                            ;;
+                    esac
+                    ;;
+                3)
+                    REGION_PORT=8583
+                    REGION_NAME="Hydra"
+                    case $ZONE in
+                        1)
+                            ZONE_PORT=8615
+                            ZONE_NAME="Hydra-1"
+                            ;;
+                        2)
+                            ZONE_PORT=8647
+                            ZONE_NAME="Hydra-2"
+                            ;;
+                        3)
+                            ZONE_PORT=8679
+                            ZONE_NAME="Hydra-3"
+                            ;;
+                    esac
+                    ;;
+            esac
+            # Start proxy
+            dialog --title "Stratum Proxy" \
+            --no-collapse \
+            --colors \
+            --msgbox "\nSlice node running region: \Z1$REGION_NAME\Zn and zone: \Z1$ZONE_NAME\Zn [$NODEREGION $NODEZONE].\n \nThe proxy will start in same location with websocket ports \Z1$REGION_PORT\Zn and \Z1$ZONE_PORT\Zn.\n \nPress okay to continue." 0 0
+            cd $HOME/quainetwork/go-quai-stratum && nohup ./build/bin/quai-stratum --region=$REGION_PORT --zone=$ZONE_PORT & >/dev/null 2>&1 | \
+            dialog --title "Stratum Proxy" \
+            --no-collapse \
+            --colors \
+            --infobox "\nStarting Proxy.\n \nPlease wait." 0 0
+            dialog --title "Stratum Proxy" \
+            --no-collapse \
+            --msgbox "\nProxy started.\n \nPress OK to return to the menu." 0 0
+        fi
+      ;;
+    3 )
+        # Update go-quai and go-quai stratum
+        if [ $ISPROXYRUNNING = "True" ]; then
+            dialog --title "Alert" \
+            --no-collapse \
+            --msgbox  "\nPlease stop your node and proxy to update." 0 0
         elif [ $ISRUNNING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and miner to update." 0 0
+            --msgbox  "\nPlease stop your node and proxy to update." 0 0
         else
+            dialog --title "Update" \
+            --no-collapse \
+            --msgbox "\nThis will update go-quai and go-quai-stratum to the latest release.\n \nPress OK to continue." 0 0
+
             cd $HOME/$MAIN_DIR/go-quai
-            git pull>/dev/null 2>&1 | \
+            git fetch --all >/dev/null 2>&1
+            NODE_LATEST_TAG=$(curl -s "https://api.github.com/repos/dominant-strategies/go-quai/tags" | jq -r '.[0].name')
+            git checkout $NODE_LATEST_TAG >/dev/null 2>&1 | \
             dialog --title "Update" \
             --no-collapse \
             --infobox "\nUpdating Node.\n \nPlease wait." 0 0
@@ -403,26 +462,28 @@ while true; do
             
             dialog --title "Update" \
             --no-collapse \
-            --msgbox "\nNode updated.\n \nPress OK to continue." 0 0
+            --msgbox "\nNode updated. (Release $NODE_LATEST_TAG).\n \nPress OK to continue." 0 0
 
-            # Update quai-cpu-miner
-            cd $HOME/$MAIN_DIR/quai-cpu-miner 
-            git pull>/dev/null 2>&1 | \
+            # Update go-quai-stratum
+            cd $HOME/$MAIN_DIR/go-quai-stratum
+            git fetch --all >/dev/null 2>&1
+            PROXY_LATEST_TAG=$(curl -s "https://api.github.com/repos/dominant-strategies/go-quai-stratum/tags" | jq -r '.[0].name')
+            git checkout $PROXY_LATEST_TAG>/dev/null 2>&1 | \
             dialog --title "Update" \
             --no-collapse \
-            --infobox "\nUpdating Miner.\n \nPlease wait."  0 0
+            --infobox "\nUpdating Proxy.\n \nPlease wait."  0 0
             
-            make quai-cpu-miner>/dev/null 2>&1 | \
+            make quai-stratum>/dev/null 2>&1 | \
             dialog --title "Update" \
             --no-collapse \
-            --infobox "\nUpdating Miner.\n \nPlease wait."  0 0
+            --infobox "\nUpdating Proxy.\n \nPlease wait."  0 0
             
             dialog --title "Update" \
             --no-collapse \
-            --msgbox "\nMiner updated.\n \nPress OK to return to the menu." 0 0
+            --msgbox "\nProxy updated. (Release $PROXY_LATEST_TAG).\n \nPress OK to return to the menu." 0 0
         fi
         ;;
-    5 )
+    4 )
         if [ $NODELOGS = "False" ]; then
             dialog --title "Alert" \
             --no-collapse \
@@ -489,40 +550,16 @@ while true; do
             dialog --cr-wrap --title "$FILE" --msgbox "\n$result" 0 0
         fi
       ;;
-    6 )
-        if [ $MININGLOGS = "False" ]; then
-            dialog --title "Alert" \
-            --no-collapse \
-            --msgbox "\nPlease start your miner before viewing logs." 0 0
-        else
-            # Print Miner Logs
-            REGION=$(dialog --nocancel --menu "Which region would you like to view logs for?" 0 0 3 \
-                1 "Cyprus" \
-                2 "Paxos" \
-                3 "Hydra" 3>&1 1>&2 2>&3 3>&- )
-            ZONE=$(dialog --nocancel --menu "Which region would you like to view logs for?" 0 0 3 \
-                1 "Zone-1" \
-                2 "Zone-2" \
-                3 "Zone-3" 3>&1 1>&2 2>&3 3>&- )
-
-            # Start miner
-            REGION=$(($REGION-1))
-            ZONE=$(($ZONE-1))
-            cd
-            result=`tail -40 quainetwork/quai-cpu-miner/logs/slice-$REGION-$ZONE.log`
-            dialog --cr-wrap --title "quainetwork/quai-cpu-miner/logs/slice-$REGION-$ZONE.log" --msgbox "\n$result" 30 90
-        fi
-      ;;
-    7 )
+    5 )
         # Edit coinbase addresses in network.env
-        if [ $ISMINING = "True" ]; then
+        if [ $ISPROXYRUNNING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and miner to edit mining addresses." 0 0
+            --msgbox  "\nPlease stop your node and proxy to edit mining addresses." 0 0
         elif [ $ISRUNNING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and miner to edit mining addresses." 0 0
+            --msgbox  "\nPlease stop your node and proxy to edit mining addresses." 0 0
         else
             cd $HOME/quainetwork/go-quai
             LOCATION=$(dialog --colors --menu "Which mining address would you like to edit?\n \n\Z1Note: Entering an incorrect address will either break your node or send rewards to another user.\Zn" 0 0 13 \
@@ -596,98 +633,74 @@ while true; do
             rm -rf network.env.save
         fi
         ;;
-    8)
-        if [ $ISMINING = "True" ]; then
+    6 )
+        if [ $ISPROXYRUNNING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and miner to edit your config file." 0 0
+            --msgbox  "\nPlease stop your node and proxy to edit your config file." 0 0
         elif [ $ISRUNNING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and miner to edit your config file." 0 0
+            --msgbox  "\nPlease stop your node and proxy to edit your config file." 0 0
         else
             cd $HOME/quainetwork/go-quai
-            LOCATION=$(dialog --colors --menu "Which config variable would you like to edit?\n \n\Z1Note: do not change these values without knowing what they do.\Zn" 0 0 13 \
-                    1 "ENABLE_HTTP" \
-                    2 "ENABLE_WS" \
-                    3 "ENABLE_UNLOCK" \
+            CHOICE=$(dialog --colors --menu "Which config variable would you like to edit?\n \n\Z1Note: do not change these values without knowing what they do.\Zn" 0 0 7 \
+                    1 "NONCE" \
+                    2 "NETWORK" \
+                    3 "VERBOSITY" \
                     4 "ENABLE_ARCHIVE" \
-                    5 "NETWORK" \
-                    6 "HTTP_ADDR" \
-                    7 "WS_ADDR" \
-                    8 "WS_API" \
-                    9 "HTTP_API" \
-                    10 "QUAI_MINING" \
-                    11 "THREADS" 3>&1 1>&2 2>&3 3>&- )
-                case $LOCATION in
+                    5 "RUN_BLAKE3" \
+                    6 "WS_API" \
+                    7 "HTTP_API" 3>&1 1>&2 2>&3 3>&- )
+                case $CHOICE in
                 1)
-                    ENABLE_HTTP=$(dialog --nocancel --inputbox "Input desired value for ENABLE_HTTP (true/false). " 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ENABLE_HTTP *=.*/ENABLE_HTTP=$ENABLE_HTTP/" network.env | dialog --msgbox "ENABLE_HTTP set to $ENABLE_HTTP" 0 0
+                    NONCE=$(dialog --nocancel --inputbox "Input desired value for NONCE. " 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^NONCE *=.*/NONCE=$NONCE/" network.env | dialog --msgbox "NONCE set to $NONCE" 0 0
                     ;;
                 2)
-                    ENABLE_WS=$(dialog --nocancel --inputbox "Input desired value for ENABLE_WS (true/false). " 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ENABLE_WS *=.*/ENABLE_WS=$ENABLE_WS/" network.env | dialog --msgbox "ENABLE_WS set to $ENABLE_WS" 0 0
+                    NETWORK=$(dialog --nocancel --inputbox "Input desired value for NETWORK. Options include colosseum (testnet), garden (devnet), and local." 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^NETWORK *=.*/NETWORK=$NETWORK/" network.env | dialog --msgbox "NETWORK set to $NETWORK" 0 0
                     ;;
                 3)
-                    ENABLE_UNLOCK=$(dialog --nocancel --inputbox "Input desired value for ENABLE_UNLOCK (true/false). " 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ENABLE_UNLOCK *=.*/ENABLE_UNLOCK=$ENABLE_UNLOCK/" network.env | dialog --msgbox "ENABLE_UNLOCK set to $ENABLE_UNLOCK" 0 0
+                    VERBOSITY=$(dialog --nocancel --inputbox "Input desired value for VERBOSITY. Options include 0, 1, 2, 3, 4, 5, and 6." 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^VERBOSITY *=.*/VERBOSITY=$VERBOSITY/" network.env | dialog --msgbox "VERBOSITY set to $VERBOSITY" 0 0
                     ;;
                 4)
                     ENABLE_ARCHIVE=$(dialog --nocancel --inputbox "Input desired value for ENABLE_ARCHIVE (true/false). " 0 0 3>&1 1>&2 2>&3 3>&-)
                     sed -i.save "s/^ENABLE_ARCHIVE *=.*/ENABLE_ARCHIVE=$ENABLE_ARCHIVE/" network.env | dialog --msgbox "ENABLE_ARCHIVE set to $ENABLE_ARCHIVE" 0 0
                     ;;
                 5)
-                    NETWORK=$(dialog --nocancel --inputbox "Input desired value for NETWORK. Options include colosseum (testnet), garden (devnet), and local." 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^NETWORK *=.*/NETWORK=$NETWORK/" network.env | dialog --msgbox "NETWORK set to $NETWORK" 0 0
+                    RUN_BLAKE3=$(dialog --nocancel --inputbox "Input desired value for RUN_BLAKE3 (true/false). Note, this feature should only be enabled for local testing. " 0 0 3>&1 1>&2 2>&3 3>&-)
+                    sed -i.save "s/^RUN_BLAKE3 *=.*/RUN_BLAKE3=$RUN_BLAKE3/" network.env | dialog --msgbox "RUN_BLAKE3 set to $RUN_BLAKE3" 0 0
                     ;;
                 6)
-                    HTTP_ADDR=$(dialog --nocancel --inputbox "Input desired value for HTTP_ADDR. Options include 0.0.0.0 and 127.0.0.1 (localhost)." 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^HTTP_ADDR *=.*/HTTP_ADDR=$HTTP_ADDR/" network.env | dialog --msgbox "HTTP_ADDR set to $HTTP_ADDR" 0 0
-                    ;;
-                7)
-                    WS_ADDR=$(dialog --nocancel --inputbox "Input desired value for WS_ADDR. Options include 0.0.0.0 and 127.0.0.1 (localhost)." 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^WS_ADDR *=.*/WS_ADDR=$WS_ADDR/" network.env | dialog --msgbox "WS_ADDR set to $WS_ADDR" 0 0
-                    ;;
-                8)
                     WS_API=$(dialog --nocancel --inputbox "Input desired value for WS_API. Options include debug, net, quai, and txpool." 0 0 3>&1 1>&2 2>&3 3>&-)
                     sed -i.save "s/^WS_API *=.*/WS_API=$WS_API/" network.env | dialog --msgbox "WS_API set to $WS_API" 0 0
                     ;;
-                9)
+                7)
                     HTTP_API=$(dialog --nocancel --inputbox "Input desired value for HTTP_API. Options include debug, net, quai, and txpool." 0 0 3>&1 1>&2 2>&3 3>&-)
                     sed -i.save "s/^HTTP_API *=.*/HTTP_API=$HTTP_API/" network.env | dialog --msgbox "HTTP_API set to $HTTP_API" 0 0
-                    ;;
-                10)
-                    QUAI_MINING=$(dialog --nocancel --inputbox "Input desired value for QUAI_MINING (true/false). " 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^QUAI_MINING *=.*/QUAI_MINING=$QUAI_MINING/" network.env | dialog --msgbox "QUAI_MINING set to $QUAI_MINING" 0 0
-                    ;;
-                11) 
-                    THREADS=$(dialog --nocancel --inputbox "Input desired value for THREADS. Set this lower than the number of threads your machine has for best performance." 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^THREADS *=.*/THREADS=$THREADS/" network.env | dialog --msgbox "THREADS set to $THREADS" 0 0
                     ;;
                 esac
                 rm -rf network.env.save
         fi
     ;;
-    9)
+    7 )
         # Clear db
-        if [ $ISMINING = "True" ]; then
+        if [ $ISPROXYRUNNING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and miner to clear the db." 0 0
+            --msgbox  "\nPlease stop your node and proxy to perform a full reset." 0 0
         elif [ $ISRUNNING = "True" ]; then
             dialog --title "Alert" \
             --no-collapse \
-            --msgbox  "\nPlease stop your node and miner to clear the db." 0 0
+            --msgbox  "\nPlease stop your node and proxy to perform a full reset." 0 0
         else
-            dialog --colors --yesno "Are you sure you want to clear your database and logs?\n \n\Z1Warning: This will fully reset your node and miner.\Zn" 0 0
+            dialog --colors --yesno "Are you sure you want to clear your database and logs?\n \n\Z1Warning: This will fully reset your node.\Zn" 0 0
             if [ $? -eq 0 ]; then
                 cd $HOME/quainetwork/go-quai
-                rm -rf nodelogs
-                rm -rf ~/Library/Quai
-                yes | ./build/bin/quai removedb
-                cd $HOME/quainetwork/quai-cpu-miner
-                rm -rf logs
-                dialog --cr-wrap --msgbox "Database cleared. Node and miner logs removed." 0 0
+                rm -rf nodelogs ~/Library/Quai ~/.quai
+                dialog --cr-wrap --msgbox "Database cleared. Node database and logs cleared." 0 0
             fi 
         fi
     ;;
