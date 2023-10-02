@@ -445,7 +445,7 @@ while true; do
         else
             dialog --title "Update" \
             --no-collapse \
-            --msgbox "\nThis will update go-quai and go-quai-stratum to the latest release.\n \nPress OK to continue." 0 0
+            --msgbox "\nThis will update go-quai and go-quai-stratum to their latest releases.\n \nPress OK to continue." 0 0
 
             cd $HOME/$MAIN_DIR/go-quai
             git fetch --all >/dev/null 2>&1
@@ -462,7 +462,8 @@ while true; do
             
             dialog --title "Update" \
             --no-collapse \
-            --msgbox "\nNode updated. (Release $NODE_LATEST_TAG).\n \nPress OK to continue." 0 0
+            --colors \
+            --msgbox "\nNode updated. \Z1(Release $NODE_LATEST_TAG)\Zn.\n \nPress OK to continue." 0 0
 
             # Update go-quai-stratum
             cd $HOME/$MAIN_DIR/go-quai-stratum
@@ -480,7 +481,8 @@ while true; do
             
             dialog --title "Update" \
             --no-collapse \
-            --msgbox "\nProxy updated. (Release $PROXY_LATEST_TAG).\n \nPress OK to return to the menu." 0 0
+            --colors \
+            --msgbox "\nProxy updated. \Z1(Release $PROXY_LATEST_TAG)\Zn.\n \nPress OK to return to the menu." 0 0
         fi
         ;;
     4 )
@@ -563,69 +565,49 @@ while true; do
         else
             cd $HOME/quainetwork/go-quai
             LOCATION=$(dialog --colors --menu "Which mining address would you like to edit?\n \n\Z1Note: Entering an incorrect address will either break your node or send rewards to another user.\Zn" 0 0 13 \
-                    1 "Prime" \
-                    2 "Cyprus" \
-                    3 "Paxos" \
-                    4 "Hydra" \
-                    5 "Cyprus-1" \
-                    6 "Cyprus-2" \
-                    7 "Cyprus-3" \
-                    8 "Paxos-1" \
-                    9 "Paxos-2" \
-                    10 "Paxos-3" \
-                    11 "Hydra-1" \
-                    12 "Hydra-2" \
-                    13 "Hydra-3" 3>&1 1>&2 2>&3 3>&- )
+                    1 "Cyprus-1" \
+                    2 "Cyprus-2" \
+                    3 "Cyprus-3" \
+                    4 "Paxos-1" \
+                    5 "Paxos-2" \
+                    6 "Paxos-3" \
+                    7 "Hydra-1" \
+                    8 "Hydra-2" \
+                    9 "Hydra-3" 3>&1 1>&2 2>&3 3>&- )
                 case $LOCATION in
                 1)
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Prime mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^PRIME_COINBASE *=.*/PRIME_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Prime address updated." 0 0
-                    ;;
-                2)
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Cyprus mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^REGION_0_COINBASE *=.*/REGION_0_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus address updated." 0 0
-                    ;;
-                3)
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Paxos mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^REGION_1_COINBASE *=.*/REGION_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos address updated." 0 0
-                    ;;
-                4)
-                    ADDRESS=$(dialog --nocancel --inputbox "Enter your Hydra mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^REGION_2_COINBASE *=.*/REGION_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra address updated." 0 0                
-                    ;;
-                5)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Cyprus-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
                     sed -i.save "s/^ZONE_0_0_COINBASE *=.*/ZONE_0_0_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-1 address updated." 0 0               
                     ;;
-                6)
+                2)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Cyprus-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
                     sed -i.save "s/^ZONE_0_1_COINBASE *=.*/ZONE_0_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-2 address updated." 0 0            
                     ;;
-                7)
+                3)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Cyprus-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
                     sed -i.save "s/^ZONE_0_2_COINBASE *=.*/ZONE_0_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Cyprus-3 address updated." 0 0               
                     ;;
-                8)
+                4)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Paxos-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
                     sed -i.save "s/^ZONE_1_0_COINBASE *=.*/ZONE_1_0_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-1 address updated." 0 0            
                     ;;
-                9)  
+                5)  
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Paxos-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
                     sed -i.save "s/^ZONE_1_1_COINBASE *=.*/ZONE_1_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-2 address updated." 0 0               
                     ;;
-                10)
+                6)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Paxos-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
                     sed -i.save "s/^ZONE_1_2_COINBASE *=.*/ZONE_1_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Paxos-3 address updated." 0 0                
                     ;;
-                11)
+                7)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Hydra-1 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
                     sed -i.save "s/^ZONE_2_0_COINBASE *=.*/ZONE_2_0_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-1 address updated." 0 0               
                     ;;
-                12)
+                8)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Hydra-2 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
                     sed -i.save "s/^ZONE_2_1_COINBASE *=.*/ZONE_2_1_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-2 address updated." 0 0                
                     ;;
-                13)
+                9)
                     ADDRESS=$(dialog --nocancel --inputbox "Enter your Hydra-3 mining address:" 0 0 3>&1 1>&2 2>&3 3>&-)
                     sed -i.save "s/^ZONE_2_2_COINBASE *=.*/ZONE_2_2_COINBASE=$ADDRESS/" network.env | dialog --msgbox "Hydra-3 address updated." 0 0           
                     ;;
@@ -655,31 +637,31 @@ while true; do
                 case $CHOICE in
                 1)
                     NONCE=$(dialog --nocancel --inputbox "Input desired value for NONCE. " 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^NONCE *=.*/NONCE=$NONCE/" network.env | dialog --msgbox "NONCE set to $NONCE" 0 0
+                    sed -i.save "s/^NONCE *=.*/NONCE=$NONCE/" network.env | dialog --colors --no-collapse --msgbox "NONCE set to \Z1$NONCE\Zn" 0 0
                     ;;
                 2)
                     NETWORK=$(dialog --nocancel --inputbox "Input desired value for NETWORK. Options include colosseum (testnet), garden (devnet), and local." 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^NETWORK *=.*/NETWORK=$NETWORK/" network.env | dialog --msgbox "NETWORK set to $NETWORK" 0 0
+                    sed -i.save "s/^NETWORK *=.*/NETWORK=$NETWORK/" network.env | dialog --colors --no-collapse --msgbox "NETWORK set to \Z1$NETWORK\Zn" 0 0
                     ;;
                 3)
                     VERBOSITY=$(dialog --nocancel --inputbox "Input desired value for VERBOSITY. Options include 0, 1, 2, 3, 4, 5, and 6." 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^VERBOSITY *=.*/VERBOSITY=$VERBOSITY/" network.env | dialog --msgbox "VERBOSITY set to $VERBOSITY" 0 0
+                    sed -i.save "s/^VERBOSITY *=.*/VERBOSITY=$VERBOSITY/" network.env | dialog --colors --no-collapse --msgbox "VERBOSITY set to \Z1$VERBOSITY\Zn" 0 0
                     ;;
                 4)
                     ENABLE_ARCHIVE=$(dialog --nocancel --inputbox "Input desired value for ENABLE_ARCHIVE (true/false). " 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^ENABLE_ARCHIVE *=.*/ENABLE_ARCHIVE=$ENABLE_ARCHIVE/" network.env | dialog --msgbox "ENABLE_ARCHIVE set to $ENABLE_ARCHIVE" 0 0
+                    sed -i.save "s/^ENABLE_ARCHIVE *=.*/ENABLE_ARCHIVE=$ENABLE_ARCHIVE/" network.env | dialog --colors --no-collapse --msgbox "ENABLE_ARCHIVE set to \Z1$ENABLE_ARCHIVE\Zn" 0 0
                     ;;
                 5)
                     RUN_BLAKE3=$(dialog --nocancel --inputbox "Input desired value for RUN_BLAKE3 (true/false). Note, this feature should only be enabled for local testing. " 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^RUN_BLAKE3 *=.*/RUN_BLAKE3=$RUN_BLAKE3/" network.env | dialog --msgbox "RUN_BLAKE3 set to $RUN_BLAKE3" 0 0
+                    sed -i.save "s/^RUN_BLAKE3 *=.*/RUN_BLAKE3=$RUN_BLAKE3/" network.env | dialog --colors --no-collapse --msgbox "RUN_BLAKE3 set to \Z1$RUN_BLAKE3\Zn" 0 0
                     ;;
                 6)
                     WS_API=$(dialog --nocancel --inputbox "Input desired value for WS_API. Options include debug, net, quai, and txpool." 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^WS_API *=.*/WS_API=$WS_API/" network.env | dialog --msgbox "WS_API set to $WS_API" 0 0
+                    sed -i.save "s/^WS_API *=.*/WS_API=$WS_API/" network.env | dialog --colors --no-collapse --msgbox "WS_API set to \Z1$WS_API\Zn" 0 0
                     ;;
                 7)
                     HTTP_API=$(dialog --nocancel --inputbox "Input desired value for HTTP_API. Options include debug, net, quai, and txpool." 0 0 3>&1 1>&2 2>&3 3>&-)
-                    sed -i.save "s/^HTTP_API *=.*/HTTP_API=$HTTP_API/" network.env | dialog --msgbox "HTTP_API set to $HTTP_API" 0 0
+                    sed -i.save "s/^HTTP_API *=.*/HTTP_API=$HTTP_API/" network.env | dialog --colors --no-collapse --msgbox "HTTP_API set to \Z1$HTTP_API\Zn" 0 0
                     ;;
                 esac
                 rm -rf network.env.save
