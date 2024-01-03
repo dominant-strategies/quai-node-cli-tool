@@ -490,7 +490,7 @@ edit_config() {
                 1 "NONCE" \
                 2 "NETWORK" \
                 3 "VERBOSITY" \
-                4 "ENABLE_ARCHIVE" \
+                4 "ENABLE_NAT" \
                 5 "RUN_BLAKE3" \
                 6 "WS_API" \
                 7 "HTTP_API" 3>&1 1>&2 2>&3 3>&- )
@@ -508,8 +508,8 @@ edit_config() {
                 sed -i.save "s/^VERBOSITY *=.*/VERBOSITY=$VERBOSITY/" network.env | dialog --colors --no-collapse --msgbox "VERBOSITY set to \Z1$VERBOSITY\Zn" 0 0
                 ;;
             4)
-                ENABLE_ARCHIVE=$(dialog --nocancel --inputbox "Input desired value for ENABLE_ARCHIVE (true/false). " 0 0 3>&1 1>&2 2>&3 3>&-)
-                sed -i.save "s/^ENABLE_ARCHIVE *=.*/ENABLE_ARCHIVE=$ENABLE_ARCHIVE/" network.env | dialog --colors --no-collapse --msgbox "ENABLE_ARCHIVE set to \Z1$ENABLE_ARCHIVE\Zn" 0 0
+                ENABLE_NAT=$(dialog --nocancel --inputbox "Input desired value for ENABLE_NAT (true/false). " 0 0 3>&1 1>&2 2>&3 3>&-)
+                sed -i.save "s/^ENABLE_NAT *=.*/ENABLE_NAT=$ENABLE_NAT/" network.env | dialog --colors --no-collapse --msgbox "ENABLE_NAT set to \Z1$ENABLE_NAT\Zn" 0 0
                 ;;
             5)
                 RUN_BLAKE3=$(dialog --nocancel --inputbox "Input desired value for RUN_BLAKE3 (true/false). Note, this feature should only be enabled for local testing. " 0 0 3>&1 1>&2 2>&3 3>&-)
